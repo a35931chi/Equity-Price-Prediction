@@ -49,12 +49,15 @@ def extract_from_quandl(ticker, start_date=(2000, 1, 1), end_date = None):
 if __name__ == '__main__':
     tickers = ['HD', 'AAPL', 'FB']
     '''
+    #get data from quandl
     for ticker in tickers:
         data = extract_from_quandl(ticker)
         data.to_csv('Data/' + ticker + '-quandl.csv')
 
     print('finished getting')
     '''
+    '''
+    #comparing data sources (quandl vs. yahoo)
     for ticker in tickers:
         data_yahoo = pd.read_csv('Data/' + ticker + '.csv', index_col = 'Date')[['Adj Close', 'Volume']]
         data_yahoo.index = pd.to_datetime(data_yahoo.index)
@@ -105,28 +108,29 @@ if __name__ == '__main__':
         plt.setp(ax1.get_xticklabels(),visible = False) #removing the first chart's x label
             
         plt.show()
-    
-''' for some reason, the quandl datasets don't have data for some dates
-2017-11-08 is a wednesday
-2017-08-07 is a monday
+    '''
+    '''
+    # for some reason, the quandl datasets don't have data for some dates
+    2017-11-08 is a wednesday
+    2017-08-07 is a monday
 
-             Adj Close     Volume  WIKI/HD - Adj. Close  \
-2017-11-08  162.297546  2912900.0                   NaN   
+                 Adj Close     Volume  WIKI/HD - Adj. Close  \
+    2017-11-08  162.297546  2912900.0                   NaN   
 
-            WIKI/HD - Adj. Volume  Adj Close Diff  Volume Diff  
-2017-11-08                    NaN             NaN          NaN
+                WIKI/HD - Adj. Volume  Adj Close Diff  Volume Diff  
+    2017-11-08                    NaN             NaN          NaN
 
-             Adj Close      Volume  WIKI/AAPL - Adj. Close  \
-2017-08-07  156.982132  21870300.0                     NaN   
-2017-11-08  174.895645  24409500.0                     NaN   
+                 Adj Close      Volume  WIKI/AAPL - Adj. Close  \
+    2017-08-07  156.982132  21870300.0                     NaN   
+    2017-11-08  174.895645  24409500.0                     NaN   
 
-            WIKI/AAPL - Adj. Volume  Adj Close Diff  Volume Diff  
-2017-08-07                      NaN             NaN          NaN  
-2017-11-08                      NaN             NaN          NaN
+                WIKI/AAPL - Adj. Volume  Adj Close Diff  Volume Diff  
+    2017-08-07                      NaN             NaN          NaN  
+    2017-11-08                      NaN             NaN          NaN
 
-             Adj Close      Volume  WIKI/FB - Adj. Close  \
-2017-11-08  179.559998  10494100.0                   NaN   
+                 Adj Close      Volume  WIKI/FB - Adj. Close  \
+    2017-11-08  179.559998  10494100.0                   NaN   
 
-            WIKI/FB - Adj. Volume  Adj Close Diff  Volume Diff  
-2017-11-08                    NaN             NaN          NaN  
-'''
+                WIKI/FB - Adj. Volume  Adj Close Diff  Volume Diff  
+    2017-11-08                    NaN             NaN          NaN  
+    '''
