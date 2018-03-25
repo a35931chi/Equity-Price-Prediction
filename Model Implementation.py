@@ -59,60 +59,80 @@ def window_transform_series(series, window_size):
 
     return X,y
 
-window_size = 7
-epochs = 20
-batch_size = 50
-X, y = window_transform_series(series = data_adjclose,
-                               window_size = window_size)
+if True:
+    ind = []
+    training_error = []
+    testing_error = []
+    model_fit_time = []
+    training_predict_time = []
+    testing_predict_time = []
+    training_error_eval_time = []
+    testing_error_eval_time = []
+    window_sizes = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
+    epochs = [10, 100, 250, 500, 1000, 2000]
+    batch_sizes = [10, 50, 100, 250, 500]
+    for window_size in window_sizes:
+        for epoch in epochs:
+            for batch_size in batch_sizes:
+                X, y = window_transform_series(series = data_adjclose,
+                                               window_size = window_size)
 
-# X.shape: (4576,7) and y.shape: (4576, 1)
-# split our dataset into training / testing sets
-train_test_split = int(np.ceil(2 * len(y) / float(3)))   # set the split point: 3051
+                # X.shape: (4576,7) and y.shape: (4576, 1)
+                # split our dataset into training / testing sets
+                train_test_split = int(np.ceil(2 * len(y) / float(3)))   # set the split point: 3051
 
-X_train, y_train = X[:train_test_split, :], y[:train_test_split] #X_train.shape: (3051, 7), y_train: (3051, 1)
-X_test, y_test = X[train_test_split:, :], y[train_test_split:] #x_test.shape: (1525, 7), y_test: (1525, 1)
-
-
-# NOTE: to use keras's RNN LSTM module our input must be reshaped to [samples, window size, stepsize] 
-X_train = np.asarray(np.reshape(X_train, (X_train.shape[0], window_size, 1))) #(3051, 7, 1)
-X_test = np.asarray(np.reshape(X_test, (X_test.shape[0], window_size, 1))) #(1525, 7, 1)
-
-
-model = Sequential()
-model.add(LSTM(7, input_shape = (window_size, 1)))
-model.add(Dense(1))
-
-optimizer = keras.optimizers.RMSprop(lr = 0.001, rho = 0.9, epsilon = 1e-08, decay = 0.0)
-model.compile(loss = 'mean_squared_error', optimizer = optimizer)
-print(model.summary())
-
-t0 = time.time()
-model.fit(X_train, y_train, epochs = epochs, batch_size = batch_size, verbose = 0)
-t1 = time.time()
-
-train_predict = model.predict(X_train)
-t2 = time.time()
-test_predict = model.predict(X_test)
-t3 = time.time()
+                X_train, y_train = X[:train_test_split, :], y[:train_test_split] #X_train.shape: (3051, 7), y_train: (3051, 1)
+                X_test, y_test = X[train_test_split:, :], y[train_test_split:] #x_test.shape: (1525, 7), y_test: (1525, 1)
 
 
-# print out training and testing errors
-training_error = model.evaluate(X_train, y_train, verbose=0)
-t4 = time.time()
-print('training error = ' + str(training_error))
-testing_error = model.evaluate(X_test, y_test, verbose=0)
-t5 = time.time()
-print('testing error = ' + str(testing_error))
+                # NOTE: to use keras's RNN LSTM module our input must be reshaped to [samples, window size, stepsize] 
+                X_train = np.asarray(np.reshape(X_train, (X_train.shape[0], window_size, 1))) #(3051, 7, 1)
+                X_test = np.asarray(np.reshape(X_test, (X_test.shape[0], window_size, 1))) #(1525, 7, 1)
 
-print('\n')
-print('windows: {}, epochs: {}, batch size: {}'.format(window_size, epochs, batch_size))
-print('model fit time: {0:.5g} s'.format(t1 - t0))
-print('training predict time: {0:.5g} s'.format(t2 - t1))
-print('testing predict time: {0:.5g} s'.format(t3 - t2))
-print('training error eval time: {0:.5g} s'.format(t4 - t3))
-print('testing error eval time: {0:.5g} s'.format(t5 - t4))
 
-if True: #plot results
+                model = Sequential()
+                model.add(LSTM(7, input_shape = (window_size, 1)))
+                model.add(Dense(1))
+
+                optimizer = keras.optimizers.RMSprop(lr = 0.001, rho = 0.9, epsilon = 1e-08, decay = 0.0)
+                model.compile(loss = 'mean_squared_error', optimizer = optimizer)
+                #print(model.summary())
+
+                t0 = time.time()
+                model.fit(X_train, y_train, epochs = epoch, batch_size = batch_size, verbose = 0)
+                t1 = time.time()
+
+                train_predict = model.predict(X_train)
+                t2 = time.time()
+                test_predict = model.predict(X_test)
+                t3 = time.time()
+
+                # evaluate training and testing errors
+                training_error = model.evaluate(X_train, y_train, verbose=0)
+                t4 = time.time()
+                testing_error = model.evaluate(X_test, y_test, verbose=0)
+                t5 = time.time()
+
+                print('\n')
+                print('window: {}, epoch: {}, batch size: {}'.format(window_size, epoch, batch_size))
+                print('training error = ' + str(training_error))
+                print('testing error = ' + str(testing_error))
+                print('model fit time: {0:.5g} s'.format(t1 - t0))
+                print('training predict time: {0:.5g} s'.format(t2 - t1))
+                print('testing predict time: {0:.5g} s'.format(t3 - t2))
+                print('training error eval time: {0:.5g} s'.format(t4 - t3))
+                print('testing error eval time: {0:.5g} s'.format(t5 - t4))
+
+                ind.append((window_size, epoch, batch_size))
+                training_error.append(training_error)
+                testing_error.append(testing_error)
+                model_fit_time.append(t1 - t0)
+                training_predict_time.append(t2 - t1)
+                testing_predict_time.append(t3 - t2)
+                training_error_eval_time.append(t4 - t3)
+                testing_error_eval_time.append(t5 - t4)
+
+if False: #plot results
     # plot original series
     plt.figure(figsize = (10, 5))
     plt.plot(data_adjclose, color = 'k', alpha = 0.5)
