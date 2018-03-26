@@ -59,6 +59,26 @@ def window_transform_series(series, window_size):
 
     return X,y
 
+def window_transform_series_v2(series, window_size, days_out):
+    # y is actually quite a few days into the future
+    X = []
+    y = []
+    #print(series)
+    #print(window_size)
+    for i in range(len(series) - window_size - days_out):
+        X.append(series[i: i + window_size])
+        y.append(series[i + window_size + days_out])
+        print(i)
+        print(series[i: i + window_size])
+        print(series[i + window_size + days_out])
+    # reshape each 
+    X = np.asarray(X)
+    X.shape = (np.shape(X)[0:2])
+    y = np.asarray(y)
+    y.shape = (len(y),1)
+
+    return X,y
+
 if True:
     ind = []
     training_error = []
