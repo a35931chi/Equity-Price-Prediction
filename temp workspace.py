@@ -28,9 +28,9 @@ SS_np_aapl = SS_scaler.fit_transform(df_aapl)
 MS_scaler = MinMaxScaler(feature_range=(0, 1))
 MS_np_aapl = MS_scaler.fit_transform(df_aapl)
 
-print('np_aapl')
-print('SS', SS_np_aapl[:20], np.min(SS_np_aapl))
-print('MS', MS_np_aapl[:20], np.min(MS_np_aapl))
+#print('np_aapl')
+#print('SS', SS_np_aapl[:20], np.min(SS_np_aapl + 1e-6))
+#print('MS', MS_np_aapl[:20], np.min(MS_np_aapl + 1e-6))
 
 if False: #comparing two normalization techniques
     plt.plot(MS_np_aapl[:,4], label = 'MS scaler')
@@ -87,7 +87,7 @@ X, y, y_diff1, y_diff2 = window_transform_series_v2(SS_np_aapl[:,4], window_size
 train_size = int(len(X) * 0.80)
 test_size = len(X) - train_size
 Xtrain, Xtest = X[0:train_size, :], X[train_size:len(X), :]
-ytrain, ytest = y[0:train_size, :], y[train_size:len(X), :]
+ytrain, ytest = y_diff1[0:train_size, :], y_diff1[train_size:len(X), :] #change here
 
 
 Xtrain = np.asarray(np.reshape(Xtrain, (Xtrain.shape[0], window_size, 1))) #
@@ -121,7 +121,7 @@ for dropout in [True, False]:
                 model.add(Dropout(0.1))
 
             model.add(Dense(output_dim = 1))
-            model.add(Activation('relu'))
+            model.add(Activation('linear'))
 
             optimizer = keras.optimizers.RMSprop(lr = 0.001, rho = 0.9, epsilon = 1e-08, decay = 0.0)
             model.compile(loss = 'mean_squared_error', optimizer = optimizer, metrics=['mse', 'accuracy'])
