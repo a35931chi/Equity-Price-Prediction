@@ -134,9 +134,16 @@ if __name__ == '__main__':
     data_yahoo = pd.read_csv('Data/' + ticker + '-yahoo.csv', index_col = 'Date')
     data_yahoo.index = pd.to_datetime(data_yahoo.index)
     #here I'm trying to paint a shape of what's happening during the trading hours
-    data_yahoo['Open'] = data_yahoo['Open'] / data_yahoo['Close'] - 1
-    data_yahoo['High'] = data_yahoo['High'] / data_yahoo['Close'] - 1
-    data_yahoo['Low'] = data_yahoo['Low'] / data_yahoo['Close'] - 1
+    data_yahoo['Range'] = (data_yahoo['High'] - data_yahoo['Low'])/ data_yahoo['Open']
+    data_yahoo['High'] = data_yahoo['High'] / data_yahoo['Open'] - 1
+    data_yahoo['Low'] = data_yahoo['Low'] / data_yahoo['Open'] - 1
+    data_yahoo['Open'] = data_yahoo['Open'] / data_yahoo['Close'].shift(1) - 1
+    
+    data_yahoo['MA5 Adj Close'] = data_yahoo['Adj Close'].rolling(window = 5).mean().shift(1)
+    data_yahoo['MA5 Volume'] = data_yahoo['Volume'].rolling(window = 5).mean().shift(1)
+    data_yahoo['MA5 Adj Close pct_change'] = data_yahoo['Adj Close'] / data_yahoo['MA5 Adj Close'] - 1
+    data_yahoo['MA5 Volume pct_change'] = data_yahoo['Volume'] / data_yahoo['MA5 Volume'] - 1
+
     #this is what we are trying to predict
     #1. 1 day future price, boxcox1p transform
     #2. 5 days future price, boxcox1p transform
@@ -151,7 +158,7 @@ if __name__ == '__main__':
     data_yahoo['Adj Close 1day pct_change cls'] = data_yahoo['Adj Close 1day pct_change'].apply(lambda x: 1 if x >= 0 else 0)
     data_yahoo['Adj Close 5day pct_change cls'] = data_yahoo['Adj Close 5day pct_change'].apply(lambda x: 1 if x >= 0 else 0)
     data_yahoo.dropna(axis = 0, how = 'any', inplace = True)
-    print(data_yahoo.head(10))
+    #print(data_yahoo.head(10))
 
     #let's look at the target variable distribution
     #plt.hist(data_yahoo['Adj Close 1day']) or plt.hist(data_yahoo['Adj Close 5day']) don't show much
@@ -213,4 +220,61 @@ if __name__ == '__main__':
             ax2.set_title(col_label + ' Box-Cox Transformed')
             ax3.set_title(col_label + ' Log Transformed')
             plt.show()
-    #let's look at the distribution between each independent and dependent variables
+
+    if False: #transformations doesn't work
+        for col_label in ['Adj Close 1day pct_change cls', 'Adj Close 5day pct_change cls']:
+            data = data_yahoo[col_label]
+            lam = 0.0001
+            
+            fig, (ax1, ax2, ax3) = plt.subplots(ncols = 3, figsize = (15, 6))
+            sns.distplot(data, fit = norm, ax = ax1)
+            sns.distplot(boxcox1p(data, lam), fit = norm, ax = ax2)
+            sns.distplot(np.log(data + lam), fit = norm, ax = ax3)
+                
+            (mu1, sigma1) = norm.fit(data)
+            (mu2, sigma2) = norm.fit(boxcox1p(data, lam))
+            (mu3, sigma3) = norm.fit(np.log(data + lam))
+                
+            ax1.legend(['Normal dist. ($\mu=$ {:.2f} and $\sigma=$ {:.2f} )'.format(mu1, sigma1),
+                        'Skewness: {:.2f}'.format(skew(data))], loc = 'best')
+            ax2.legend(['Normal dist. ($\mu=$ {:.2f} and $\sigma=$ {:.2f} )'.format(mu2, sigma2),
+                        'Skewness: {:.2f}'.format(skew(boxcox1p(data, lam)))], loc = 'best')
+            ax3.legend(['Normal dist. ($\mu=$ {:.2f} and $\sigma=$ {:.2f} )'.format(mu3, sigma3),
+                        'Skewness: {:.2f}'.format(skew(np.log(data + lam)))], loc = 'best')
+            ax1.set_ylabel('Frequency')
+            ax1.set_title(col_label + ' Distribution')
+            ax2.set_title(col_label + ' Box-Cox Transformed')
+            ax3.set_title(col_label + ' Log Transformed')
+            plt.show()
+
+    #let's look at the distribution between each independent variables
+    if True:
+        for col_label in ['Open', 'High', 'Low', 'Range', 'Adj Close', 'Volume', 'MA5 Adj Close',
+                          'MA5 Volume', 'MA5 Adj Close pct_change', 'MA5 Volume pct_change']:
+            data = data_yahoo[col_label]
+            if np.min(data) < 0:
+                data = data - np.min(data)
+            
+            lam = 0.0001
+            
+            fig, (ax1, ax2, ax3) = plt.subplots(ncols = 3, figsize = (15, 6))
+            sns.distplot(data, fit = norm, ax = ax1)
+            sns.distplot(boxcox1p(data, lam), fit = norm, ax = ax2)
+            sns.distplot(np.log(data + lam), fit = norm, ax = ax3)
+                
+            (mu1, sigma1) = norm.fit(data)
+            (mu2, sigma2) = norm.fit(boxcox1p(data, lam))
+            (mu3, sigma3) = norm.fit(np.log(data + lam))
+                
+            ax1.legend(['Normal dist. ($\mu=$ {:.2f} and $\sigma=$ {:.2f} )'.format(mu1, sigma1),
+                        'Skewness: {:.2f}'.format(skew(data))], loc = 'best')
+            ax2.legend(['Normal dist. ($\mu=$ {:.2f} and $\sigma=$ {:.2f} )'.format(mu2, sigma2),
+                        'Skewness: {:.2f}'.format(skew(boxcox1p(data, lam)))], loc = 'best')
+            ax3.legend(['Normal dist. ($\mu=$ {:.2f} and $\sigma=$ {:.2f} )'.format(mu3, sigma3),
+                        'Skewness: {:.2f}'.format(skew(np.log(data + lam)))], loc = 'best')
+            ax1.set_ylabel('Frequency')
+            ax1.set_title(col_label + ' Distribution')
+            ax2.set_title(col_label + ' Box-Cox Transformed')
+            ax3.set_title(col_label + ' Log Transformed')
+            plt.show()
+        
