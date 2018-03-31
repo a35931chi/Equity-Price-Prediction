@@ -8,9 +8,11 @@ from scipy.stats import norm, skew
 from scipy import stats
 from scipy.special import boxcox1p
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.decomposition import PCA
 
 import matplotlib.pyplot as plt
 import seaborn as sns
+import visuals as vs
 
 #we got a problem...
 #yahoo and google API doesn't exist anymore. I'll need to pull updated info from quandl
@@ -165,11 +167,28 @@ if __name__ == '__main__':
 
     if False: #scaling isn't all that great for these two target variables
         for col_label in ['Adj Close 1day', 'Adj Close 5day']:
-            #MM_Scaler = StandardScaler()
-            #data = MM_Scaler.fit_transform(data_yahoo[col_label])
-            #data = data - np.min(data)
-            data = data_yahoo[col_label]
             lam = 0.0001
+            scaler = StandardScaler()
+            data = scaler.fit_transform(data_yahoo[col_label])
+            #data = data_yahoo[col_label]
+            if np.min(data) < 0:
+                data = data - np.min(data)
+            ''' 
+            no scaler:
+            1.2165656107790856 -0.06554419693948103 -0.2485500333952623
+            1.2147780477183334 -0.06797363864363892 -0.25105816533149256
+            
+            MinMax:
+            1.2165656107790865 0.9905547643484544 -0.6092542377635981
+            1.2147780477183334 0.9885749885051007 -0.6115631693413965
+            
+            Standard:
+            1.216565610779086 0.7273346450678947 -0.6463496872857882
+            1.214778047718333 0.7258861448434313 -0.6485618913384967
+            
+            Adj Close 1day - no scaler boxcox
+            Adj Close 5day - no scaler boxcox
+            '''
             
             fig, (ax1, ax2, ax3) = plt.subplots(ncols = 3, figsize = (15, 6))
             sns.distplot(data, fit = norm, ax = ax1)
@@ -187,6 +206,7 @@ if __name__ == '__main__':
             ax3.legend(['Normal dist. ($\mu=$ {:.2f} and $\sigma=$ {:.2f} )'.format(mu3, sigma3),
                         'Skewness: {:.2f}'.format(skew(np.log(data + lam)))], loc = 'best')
             ax1.set_ylabel('Frequency')
+            print(skew(data), skew(boxcox1p(data, lam)), skew(np.log(data + lam)))
             ax1.set_title(col_label + ' Distribution')
             ax2.set_title(col_label + ' Box-Cox Transformed')
             ax3.set_title(col_label + ' Log Transformed')
@@ -195,11 +215,27 @@ if __name__ == '__main__':
     if False: #scalers doesn't really work here either
         for col_label in ['Adj Close 1day pct_change', 'Adj Close 5day pct_change']:
             lam = 0.0001
-            #MM_Scaler = MinMaxScaler()
-            #data = MM_Scaler.fit_transform(data_yahoo[col_label])
-            data = data_yahoo[col_label]
-            data = data - np.min(data)
+            scaler = StandardScaler()
+            data = scaler.fit_transform(data_yahoo[col_label])
+            #data = data_yahoo[col_label]
+            if np.min(data) < 0:
+                data = data - np.min(data)
+            ''' 
+            no scaler:
+            -1.6510040307386993 -3.041993709001984 -55.25486882951101
+            -0.9408177644672319 -1.8326191132390537 -29.740251304355382
             
+            MinMax:
+            -1.6510040307386906 -3.7210597124936196 -56.219015977319174
+            -0.9408177644672386 -1.928686775469499 -30.170597099885942
+            
+            Standard:
+            -1.6510040307386935 -23.430168647942985 -61.022779357622056
+            -0.9408177644672379 -7.476432811167501 -39.192139404540846
+            
+            Adj Close 1day pct_change - no scaler no transform
+            Adj Close 5day pct_change - no scaler no transform
+            '''
             fig, (ax1, ax2, ax3) = plt.subplots(ncols = 3, figsize = (15, 6))
             sns.distplot(data, fit = norm, ax = ax1)
             sns.distplot(boxcox1p(data, lam), fit = norm, ax = ax2)
@@ -216,6 +252,7 @@ if __name__ == '__main__':
             ax3.legend(['Normal dist. ($\mu=$ {:.2f} and $\sigma=$ {:.2f} )'.format(mu3, sigma3),
                         'Skewness: {:.2f}'.format(skew(np.log(data + lam)))], loc = 'best')
             ax1.set_ylabel('Frequency')
+            print(skew(data), skew(boxcox1p(data, lam)), skew(np.log(data + lam)))
             ax1.set_title(col_label + ' Distribution')
             ax2.set_title(col_label + ' Box-Cox Transformed')
             ax3.set_title(col_label + ' Log Transformed')
@@ -223,9 +260,14 @@ if __name__ == '__main__':
 
     if False: #transformations doesn't work
         for col_label in ['Adj Close 1day pct_change cls', 'Adj Close 5day pct_change cls']:
-            data = data_yahoo[col_label]
+
             lam = 0.0001
-            
+            scaler = StandardScaler()
+            data = scaler.fit_transform(data_yahoo[col_label])
+            #data = data_yahoo[col_label]
+            if np.min(data) < 0:
+                data = data - np.min(data)
+
             fig, (ax1, ax2, ax3) = plt.subplots(ncols = 3, figsize = (15, 6))
             sns.distplot(data, fit = norm, ax = ax1)
             sns.distplot(boxcox1p(data, lam), fit = norm, ax = ax2)
@@ -242,19 +284,69 @@ if __name__ == '__main__':
             ax3.legend(['Normal dist. ($\mu=$ {:.2f} and $\sigma=$ {:.2f} )'.format(mu3, sigma3),
                         'Skewness: {:.2f}'.format(skew(np.log(data + lam)))], loc = 'best')
             ax1.set_ylabel('Frequency')
+            print(skew(data), skew(boxcox1p(data, lam)), skew(np.log(data + lam)))
             ax1.set_title(col_label + ' Distribution')
             ax2.set_title(col_label + ' Box-Cox Transformed')
             ax3.set_title(col_label + ' Log Transformed')
             plt.show()
 
     #let's look at the distribution between each independent variables
-    if True:
+    if False:
         for col_label in ['Open', 'High', 'Low', 'Range', 'Adj Close', 'Volume', 'MA5 Adj Close',
                           'MA5 Volume', 'MA5 Adj Close pct_change', 'MA5 Volume pct_change']:
-            data = data_yahoo[col_label]
+            #data = data_yahoo[col_label]
+            MM_Scaler = StandardScaler()
+            data = MM_Scaler.fit_transform(data_yahoo[col_label])
             if np.min(data) < 0:
                 data = data - np.min(data)
+            '''
+            no scaler:
+            -5.81225631547921 -9.146269872594456 -62.02985068281074
+            2.712481343056322 2.5700673022819003 -0.9250758631542217
+            -2.5660281111479226 -2.748341308395658 -33.43627464332718
+            2.0711648325652057 1.9393218387203244 0.11413402414840106
+            1.2168876669938415 -0.06494740962703247 -0.24793607926031352
+            2.964204574183921 -0.053455194367689286 -0.05363840820122992
+            1.2162667302493857 -0.06319870260334028 -0.24591172238801545
+            1.612323763816607 -0.13175043131958308 -0.13190749719487718
+            -1.5597704161777437 -2.5595298869477796 -37.90656860268758
+            6.2660356551310485 1.3701314015201278 -1.5385880097432818
             
+            MinMax:
+            -5.8122563154792015 -11.082155965519698 -62.60899490983156
+            2.7124813430563224 2.1099552360244025 -1.5007847275278556
+            -2.566028111147925 -3.2923115321333882 -39.97787685974701
+            2.071164832565206 1.63981390276237 -0.5591602425043781
+            1.216887666993841 0.9909781433323644 -0.6086980942779617
+            2.96420457418392 2.1627318198895265 -0.44700320966425255
+            1.2162667302493853 0.9896212018472764 -0.6191447177436266
+            1.6123237638166064 1.2209628689973062 -0.8754504958756806
+            -1.5597704161777388 -2.9341885148669853 -39.23072118617314
+            6.26603565513105 4.0674910496926024 -0.6555394360531169
+
+            Standard:
+            -5.812256315479212 -43.76335777947685 -65.00115946436995
+            2.7124813430563215 0.9592105401947402 -2.3878118031831503
+            -2.566028111147922 -7.668800386424772 -47.99647262001495
+            2.0711648325652066 0.6949862598819779 -0.7304334255376943
+            1.2168876669938415 0.7276509004530627 -0.6458190217616919
+            2.9642045741839196 0.7457660928003991 -0.6036534963638037
+            1.2162667302493853 0.7279810838194929 -0.6604003387555384
+            1.6123237638166061 0.47908958845988775 -0.9756621700306726
+            -1.5597704161777395 -11.379256076858951 -47.849396206857875
+            6.2660356551310485 0.9336930967122643 -1.872136860642601
+
+            Open - no scaler no transform
+            High - StandardScaler boxcox transform
+            Low - no scaler no transform
+            Range - no scaler log transform
+            Adj Close - no scaler boxcox transform
+            Volume - no scaler boxcox transform
+            MA5 Adj Close - no scaler boxcox transform
+            MA5 Volume - no scaler boxcox transform
+            MA5 Adj Close pct_change - no scaler no transform
+            MA5 Volume pct_change - MinMaxScaler log transform
+            '''
             lam = 0.0001
             
             fig, (ax1, ax2, ax3) = plt.subplots(ncols = 3, figsize = (15, 6))
@@ -272,9 +364,84 @@ if __name__ == '__main__':
                         'Skewness: {:.2f}'.format(skew(boxcox1p(data, lam)))], loc = 'best')
             ax3.legend(['Normal dist. ($\mu=$ {:.2f} and $\sigma=$ {:.2f} )'.format(mu3, sigma3),
                         'Skewness: {:.2f}'.format(skew(np.log(data + lam)))], loc = 'best')
+            print(skew(data), skew(boxcox1p(data, lam)), skew(np.log(data + lam)))
             ax1.set_ylabel('Frequency')
             ax1.set_title(col_label + ' Distribution')
             ax2.set_title(col_label + ' Box-Cox Transformed')
             ax3.set_title(col_label + ' Log Transformed')
             plt.show()
         
+    #so what do we need to transform?
+    #no scaler no transform
+    lam = 0.0001
+    col_names = ['Adj Close 1day pct_change', 'Adj Close 5day pct_change', 'Adj Close 1day pct_change cls',
+                 'Adj Close 5day pct_change cls', 'Open', 'Low', 'MA5 Adj Close pct_change']
+    #no scaler, boxcox transform
+    col_names = ['Adj Close 1day', 'Adj Close 5day', 'Adj Close',
+                 'MA5 Adj Close', 'MA5 Volume', 'Volume']
+    for col_name in col_names:
+        data_yahoo[col_name] = boxcox1p(data_yahoo[col_name], lam)
+
+    #no scaler, log transform
+    data_yahoo['Range'] = np.log(data_yahoo['Range'] + lam)
+    #StandardScaler, boxcox transform
+    SS_scaler = StandardScaler()
+    data_yahoo['High'] = boxcox1p(SS_scaler.fit_transform(data_yahoo['High']), lam)
+    #MinMaxScaler, log transform    
+    MM_scaler = MinMaxScaler()
+    data_yahoo['MA5 Volume pct_change'] = np.log(MM_scaler.fit_transform(data_yahoo['MA5 Volume pct_change']) + lam)
+
+
+    #let's look at heatmaps
+    print(data_yahoo.head(20))
+
+    if False: #correlation X vs. ylog
+        corrmat = data_yahoo.corr()
+        plt.subplots(figsize = (12, 9))
+        g = sns.heatmap(corrmat, vmax = 0.9, square = True)
+        g.set_yticklabels(g.get_yticklabels(), rotation = 0, fontsize = 8)
+        g.set_xticklabels(g.get_xticklabels(), rotation = 90, fontsize = 8)
+        plt.title('Correlation Matrix/Heatmap Numerical Features vs. ylog')
+        plt.tight_layout()
+        plt.savefig('Numerical Features vs. ylog heatmap.png')
+        plt.show()
+
+    #let's also try PCA
+    pca = PCA(n_components = 7)
+    train = data_yahoo[['Open', 'High', 'Low', 'Range', 'Adj Close', 'Volume', 'MA5 Adj Close',
+                        'MA5 Volume', 'MA5 Adj Close pct_change', 'MA5 Volume pct_change']]
+    trainPCA = pd.DataFrame(pca.fit_transform(train))
+    
+    if True:
+        pca_results = vs.pca_results(train, pca)
+        plt.show() 
+        ys = pca.explained_variance_ratio_
+        xs = np.arange(1, len(ys)+1)
+        plt.plot(xs, np.cumsum(ys), '-o')
+        for label, x, y in zip(np.cumsum(ys), xs, np.cumsum(ys)):
+            plt.annotate('{:.2f}%'.format(label * 100),
+                xy = (x, y), xytext=(30, -20),
+                textcoords = 'offset points', ha = 'right', va = 'bottom',
+                bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),
+                arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0'))
+    
+        plt.ylabel('Cumulative Explained Variance')
+        plt.xlabel('Dimensions')
+        plt.title('PCA - Total Explained Variance by # fo Dimensions')
+        plt.tight_layout()
+        plt.savefig('PCA Cumsum.png')
+        plt.show()
+    
+        temp = pd.DataFrame.copy(trainPCA)
+        temp.columns = ['Dimension ' + str(i) for i in range(1,8)]
+        for target in ['Adj Close 1day', 'Adj Close 5day', 'Adj Close 1day pct_change', 'Adj Close 5day pct_change']:
+            temp[target] = data_yahoo.reset_index()[target]
+    
+        g = sns.heatmap(temp.corr(), annot = True, annot_kws={'size': 8})
+        g.set_yticklabels(g.get_yticklabels(), rotation = 0, fontsize = 8)
+        g.set_xticklabels(g.get_xticklabels(), rotation = 90, fontsize = 8)
+        plt.title('PCA Correlation Matrix/Heatmap')
+        plt.tight_layout()
+        plt.show()
+        
+
