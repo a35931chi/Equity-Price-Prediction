@@ -131,46 +131,50 @@ def illustrate_datasets():
     pass
 
 
-if __name__ == '__main__':
-    ticker = 'AAPL'
+def extract_data(ticker):
     data_yahoo = pd.read_csv('Data/' + ticker + '-yahoo.csv', index_col = 'Date')
     data_yahoo.index = pd.to_datetime(data_yahoo.index)
-    #here I'm trying to paint a shape of what's happening during the trading hours
+    #here I'm trying to paint a shape of what's happening during the trading hours, these are independent features
+    #range describes the min/max distance per open price
     data_yahoo['Range'] = (data_yahoo['High'] - data_yahoo['Low'])/ data_yahoo['Open']
+    #high is a percentage of open
     data_yahoo['High'] = data_yahoo['High'] / data_yahoo['Open'] - 1
+    #low is a percentage of open
     data_yahoo['Low'] = data_yahoo['Low'] / data_yahoo['Open'] - 1
+    #open is a percentage of previous day's close
     data_yahoo['Open'] = data_yahoo['Open'] / data_yahoo['Close'].shift(1) - 1
-    
+    #previous 5 days moving average (adj close)
     data_yahoo['MA5 Adj Close'] = data_yahoo['Adj Close'].rolling(window = 5).mean().shift(1)
+    #previous 5 days moving average (volume)
     data_yahoo['MA5 Volume'] = data_yahoo['Volume'].rolling(window = 5).mean().shift(1)
+    #% change vs. previous 5 days (adj close)
     data_yahoo['MA5 Adj Close pct_change'] = data_yahoo['Adj Close'] / data_yahoo['MA5 Adj Close'] - 1
+    #% change vs. previous 5 days (volume)
     data_yahoo['MA5 Volume pct_change'] = data_yahoo['Volume'] / data_yahoo['MA5 Volume'] - 1
 
-    #this is what we are trying to predict
-    #1. 1 day future price, boxcox1p transform
-    #2. 5 days future price, boxcox1p transform
-    #3. 1 day future price percentage change
-    #4. 5 day future price percentage change
-    #5. 1 day future price direction
-    #6. 5 day future price direction
+    #this is what we are trying to predict (targets)
+    #1. 1 day future price
     data_yahoo['Adj Close 1day'] = data_yahoo['Adj Close'].shift(-1)
+    #2. 5 days future price
     data_yahoo['Adj Close 5day'] = data_yahoo['Adj Close'].shift(-5)
+    #3. 1 day future price percentage change
     data_yahoo['Adj Close 1day pct_change'] = data_yahoo['Adj Close 1day'] / data_yahoo['Adj Close'] - 1
+    #4. 5 day future price percentage change
     data_yahoo['Adj Close 5day pct_change'] = data_yahoo['Adj Close 5day'] / data_yahoo['Adj Close'] - 1
+    #5. 1 day future price direction
     data_yahoo['Adj Close 1day pct_change cls'] = data_yahoo['Adj Close 1day pct_change'].apply(lambda x: 1 if x >= 0 else 0)
+    #6. 5 day future price direction
     data_yahoo['Adj Close 5day pct_change cls'] = data_yahoo['Adj Close 5day pct_change'].apply(lambda x: 1 if x >= 0 else 0)
     data_yahoo.dropna(axis = 0, how = 'any', inplace = True)
     #print(data_yahoo.head(10))
 
     #let's look at the target variable distribution
-    #plt.hist(data_yahoo['Adj Close 1day']) or plt.hist(data_yahoo['Adj Close 5day']) don't show much
-
     if False: #scaling isn't all that great for these two target variables
         for col_label in ['Adj Close 1day', 'Adj Close 5day']:
             lam = 0.0001
-            scaler = StandardScaler()
-            data = scaler.fit_transform(data_yahoo[col_label])
-            #data = data_yahoo[col_label]
+            #scaler = StandardScaler()
+            #data = scaler.fit_transform(data_yahoo[col_label])
+            data = data_yahoo[col_label]
             if np.min(data) < 0:
                 data = data - np.min(data)
             ''' 
@@ -215,9 +219,9 @@ if __name__ == '__main__':
     if False: #scalers doesn't really work here either
         for col_label in ['Adj Close 1day pct_change', 'Adj Close 5day pct_change']:
             lam = 0.0001
-            scaler = StandardScaler()
-            data = scaler.fit_transform(data_yahoo[col_label])
-            #data = data_yahoo[col_label]
+            #scaler = StandardScaler()
+            #data = scaler.fit_transform(data_yahoo[col_label])
+            data = data_yahoo[col_label]
             if np.min(data) < 0:
                 data = data - np.min(data)
             ''' 
@@ -262,9 +266,9 @@ if __name__ == '__main__':
         for col_label in ['Adj Close 1day pct_change cls', 'Adj Close 5day pct_change cls']:
 
             lam = 0.0001
-            scaler = StandardScaler()
-            data = scaler.fit_transform(data_yahoo[col_label])
-            #data = data_yahoo[col_label]
+            #scaler = StandardScaler()
+            #data = scaler.fit_transform(data_yahoo[col_label])
+            data = data_yahoo[col_label]
             if np.min(data) < 0:
                 data = data - np.min(data)
 
@@ -294,9 +298,10 @@ if __name__ == '__main__':
     if False:
         for col_label in ['Open', 'High', 'Low', 'Range', 'Adj Close', 'Volume', 'MA5 Adj Close',
                           'MA5 Volume', 'MA5 Adj Close pct_change', 'MA5 Volume pct_change']:
-            #data = data_yahoo[col_label]
+            lam = 0.0001
             MM_Scaler = StandardScaler()
             data = MM_Scaler.fit_transform(data_yahoo[col_label])
+            #data = data_yahoo[col_label]
             if np.min(data) < 0:
                 data = data - np.min(data)
             '''
@@ -346,9 +351,7 @@ if __name__ == '__main__':
             MA5 Volume - no scaler boxcox transform
             MA5 Adj Close pct_change - no scaler no transform
             MA5 Volume pct_change - MinMaxScaler log transform
-            '''
-            lam = 0.0001
-            
+            '''            
             fig, (ax1, ax2, ax3) = plt.subplots(ncols = 3, figsize = (15, 6))
             sns.distplot(data, fit = norm, ax = ax1)
             sns.distplot(boxcox1p(data, lam), fit = norm, ax = ax2)
@@ -393,17 +396,15 @@ if __name__ == '__main__':
 
 
     #let's look at heatmaps
-    print(data_yahoo.head(20))
-
     if False: #correlation X vs. ylog
+        print(data_yahoo.head(20))
         corrmat = data_yahoo.corr()
         plt.subplots(figsize = (12, 9))
-        g = sns.heatmap(corrmat, vmax = 0.9, square = True)
+        g = sns.heatmap(corrmat, vmax = 0.9, square = True, annot = True, annot_kws={'size': 8})
         g.set_yticklabels(g.get_yticklabels(), rotation = 0, fontsize = 8)
         g.set_xticklabels(g.get_xticklabels(), rotation = 90, fontsize = 8)
-        plt.title('Correlation Matrix/Heatmap Numerical Features vs. ylog')
+        plt.title('Correlation Matrix/Heatmap Numerical Features vs. Targets')
         plt.tight_layout()
-        plt.savefig('Numerical Features vs. ylog heatmap.png')
         plt.show()
 
     #let's also try PCA
@@ -411,8 +412,13 @@ if __name__ == '__main__':
     train = data_yahoo[['Open', 'High', 'Low', 'Range', 'Adj Close', 'Volume', 'MA5 Adj Close',
                         'MA5 Volume', 'MA5 Adj Close pct_change', 'MA5 Volume pct_change']]
     trainPCA = pd.DataFrame(pca.fit_transform(train))
+
+    temp = pd.DataFrame.copy(trainPCA)
+    temp.columns = ['Dimension ' + str(i) for i in range(1,8)]
+    for target in ['Adj Close 1day', 'Adj Close 5day', 'Adj Close 1day pct_change', 'Adj Close 5day pct_change']:
+        temp[target] = data_yahoo.reset_index()[target]
     
-    if True:
+    if True: #show PCA results, cumulative power, and heatmap
         pca_results = vs.pca_results(train, pca)
         plt.show() 
         ys = pca.explained_variance_ratio_
@@ -429,19 +435,19 @@ if __name__ == '__main__':
         plt.xlabel('Dimensions')
         plt.title('PCA - Total Explained Variance by # fo Dimensions')
         plt.tight_layout()
-        plt.savefig('PCA Cumsum.png')
         plt.show()
-    
-        temp = pd.DataFrame.copy(trainPCA)
-        temp.columns = ['Dimension ' + str(i) for i in range(1,8)]
-        for target in ['Adj Close 1day', 'Adj Close 5day', 'Adj Close 1day pct_change', 'Adj Close 5day pct_change']:
-            temp[target] = data_yahoo.reset_index()[target]
     
         g = sns.heatmap(temp.corr(), annot = True, annot_kws={'size': 8})
         g.set_yticklabels(g.get_yticklabels(), rotation = 0, fontsize = 8)
         g.set_xticklabels(g.get_xticklabels(), rotation = 90, fontsize = 8)
         plt.title('PCA Correlation Matrix/Heatmap')
         plt.tight_layout()
+        #plt.savefig('Charts/PCA heatmap.png')
         plt.show()
         
+    return pca, temp, data_yahoo
+        
 
+if __name__ == '__main__':
+    #illustrate_datasets()
+    pca, PCA_df, df = extract_data('AAPL')
