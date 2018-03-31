@@ -415,10 +415,11 @@ def extract_data(ticker):
 
     temp = pd.DataFrame.copy(trainPCA)
     temp.columns = ['Dimension ' + str(i) for i in range(1,8)]
-    for target in ['Adj Close 1day', 'Adj Close 5day', 'Adj Close 1day pct_change', 'Adj Close 5day pct_change']:
+    for target in ['Adj Close 1day', 'Adj Close 5day', 'Adj Close 1day pct_change', 'Adj Close 5day pct_change',
+                   'Adj Close 1day pct_change cls', 'Adj Close 5day pct_change cls']:
         temp[target] = data_yahoo.reset_index()[target]
     
-    if True: #show PCA results, cumulative power, and heatmap
+    if False: #show PCA results, cumulative power, and heatmap
         pca_results = vs.pca_results(train, pca)
         plt.show() 
         ys = pca.explained_variance_ratio_
