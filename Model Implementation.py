@@ -61,24 +61,78 @@ def rmse(prediction, yval): #this method calculates the metrics
 def Lasso_GSCV(Xtrain, Xval, ytrain, yval):
     '''
     no PCA:
-    Time algo takes: 0.078 seconds
-    Train score: 0.1118 (0.93%)
-    Test error: 0.1017 (0.84%)
-    Lasso(alpha=0.0006, copy_X=True, fit_intercept=True, max_iter=100,
+    predicting: Adj Close 1day
+    Time algo takes: 26.254 seconds
+    Train error: 0.0216 (0.78%)
+    Test error: 0.0178 (0.65%)
+    Lasso(alpha=0.0001, copy_X=True, fit_intercept=True, max_iter=100.0,
+       normalize=False, positive=False, precompute=False, random_state=None,
+       selection='cyclic', tol=0.0001, warm_start=False)
+
+    predicting: Adj Close 5day
+    Time algo takes: 51.389 seconds
+    Train error: 0.0460 (1.66%)
+    Test error: 0.0417 (1.53%)
+    Lasso(alpha=1e-05, copy_X=True, fit_intercept=True, max_iter=100.0,
+       normalize=False, positive=False, precompute=False, random_state=None,
+       selection='cyclic', tol=0.0001, warm_start=False)
+
+    predicting: Adj Close 1day pct_change
+    Time algo takes: 57.937 seconds
+    Train error: 0.0277 (5294.01%)
+    Test error: 0.0234 (1285.35%)
+    Lasso(alpha=0.001, copy_X=True, fit_intercept=True, max_iter=10.0,
+       normalize=False, positive=False, precompute=False, random_state=None,
+       selection='cyclic', tol=0.0001, warm_start=False)
+
+    predicting: Adj Close 5day pct_change
+    Time algo takes: 55.721 seconds
+    Train error: 0.0568 (983.14%)
+    Test error: 0.0545 (869.17%)
+    Lasso(alpha=1e-05, copy_X=True, fit_intercept=True, max_iter=10.0,
        normalize=False, positive=False, precompute=False, random_state=None,
        selection='cyclic', tol=0.0001, warm_start=False)
 
     PCA:
-    Lasso GridSearchCV:  13 Nov 2017 16:30:18
-    Time algo takes: 0.016 seconds
-    Train score: 0.1857 (1.55%)
-    Test error: 0.1801 (1.50%)
-    Lasso(alpha=0.0005, copy_X=True, fit_intercept=True, max_iter=100,
+    predicting: Adj Close 1day
+    Lasso GridSearchCV:  01 Apr 2018 00:10:49
+    Time algo takes: 0.775 seconds
+    Train error: 0.0218 (0.79%)
+    Test error: 0.0181 (0.66%)
+    Lasso(alpha=1e-05, copy_X=True, fit_intercept=True, max_iter=10.0,
        normalize=False, positive=False, precompute=False, random_state=None,
        selection='cyclic', tol=0.0001, warm_start=False)
+
+    predicting: Adj Close 5day
+    Lasso GridSearchCV:  01 Apr 2018 00:10:10
+    Time algo takes: 0.700 seconds
+    Train error: 0.0461 (1.66%)
+    Test error: 0.0419 (1.53%)
+    Lasso(alpha=1e-08, copy_X=True, fit_intercept=True, max_iter=10.0,
+       normalize=False, positive=False, precompute=False, random_state=None,
+       selection='cyclic', tol=0.0001, warm_start=False)
+
+    predicting: Adj Close 1day pct_change
+    Lasso GridSearchCV:  01 Apr 2018 00:13:19
+    Time algo takes: 0.935 seconds
+    Train error: 0.0277 (5294.77%)
+    Test error: 0.0234 (1285.35%)
+    Lasso(alpha=0.001, copy_X=True, fit_intercept=True, max_iter=10.0,
+       normalize=False, positive=False, precompute=False, random_state=None,
+       selection='cyclic', tol=0.0001, warm_start=False)
+
+    predicting: Adj Close 5day pct_change
+    Lasso GridSearchCV:  01 Apr 2018 00:39:01
+    Time algo takes: 0.911 seconds
+    Train error: 0.0568 (982.59%)
+    Test error: 0.0545 (869.70%)
+    Lasso(alpha=1e-10, copy_X=True, fit_intercept=True, max_iter=10.0,
+       normalize=False, positive=False, precompute=False, random_state=None,
+       selection='cyclic', tol=0.0001, warm_start=False)
+
     '''
     print('Lasso GridSearchCV: ', strftime('%d %b %Y %H:%M:%S', gmtime()))
-    params = {'alpha': [1e-07, 1e-06, 1e-05, 5e-05, 0.0001, 0.001],
+    params = {'alpha': [1e-10, 1e-09, 1e-08, 1e-07, 1e-06, 1e-05, 1e-04, 1e-03],
               'max_iter': [1e1, 1e2, 1e3, 1e4, 1e5]}
     
     cv_sets = ShuffleSplit(n_splits = 5, test_size = 0.2, random_state = 0)
@@ -92,7 +146,59 @@ def Lasso_GSCV(Xtrain, Xval, ytrain, yval):
     
     test_score = rmse(grid.predict(Xval), yval)
     print('Time algo takes: {:.3f} seconds'.format(time() - t0))
-    print('Train score: {:.4f} ({:.2f}%)'.format(np.sqrt(-grid.best_score_), np.sqrt(-grid.best_score_) / np.mean(ytrain) * 100))
+    print('Train error: {:.4f} ({:.2f}%)'.format(np.sqrt(-grid.best_score_), np.sqrt(-grid.best_score_) / np.mean(ytrain) * 100))
+    print('Test error: {:.4f} ({:.2f}%)'.format(test_score, test_score / np.mean(yval) * 100))
+    
+    print(grid.best_estimator_)
+    #print(grid.cv_results_)
+    pass
+
+def XGBR_GSCV(Xtrain, Xval, ytrain, yval):
+    '''
+    params = {'reg_alpha': [0.00001, 0.000025, 0.00005,0.000075,
+                        0.0001, 0.0002, 0.0003, 0.0004, 0.0005, 0.0006, 0.0007,
+                        0.0008, 0.0009, 0.001, 0.0025, 0.005],
+              'n_estimators': range(1500, 5000, 100),
+              'learning_rate': [0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.045, 0.05, 0.055, 0.06, 0.065,
+                                0.07, 0.075, 0.08, 0.085, 0.09, 0.1],
+              'max_depth': range(1, 10)}
+    no PCA:
+    Adj Close 1day pct_change cls:
+    Time algo takes: 1720.520 seconds
+    Train error: 0.6880 (133.59%)
+    Test error: 0.7008 (130.05%)
+    XGBClassifier(base_score=0.5, colsample_bylevel=1, colsample_bytree=1,
+           gamma=0, learning_rate=0.1, max_delta_step=0, max_depth=6,
+           min_child_weight=1, missing=None, n_estimators=1000, nthread=-1,
+           objective='binary:logistic', reg_alpha=1e-05, reg_lambda=1,
+           scale_pos_weight=1, seed=0, silent=True, subsample=1)
+
+    Adj Close 5day pct_change cls:
+    
+    PCA:
+    Adj Close 1day pct_change cls:
+    
+
+    Adj Close 5day pct_change cls:
+    
+    '''
+    print('XGBoost GridSearchCV: ', strftime('%d %b %Y %H:%M:%S', gmtime()))
+    params = {'learning_rate': [0.01, 0.05, 0.1, 0.5, 1],
+              'max_depth': [4, 5, 6, 7, 8],
+              'n_estimators': [500, 600, 700, 800, 900, 1000, 1100],
+              'reg_alpha': [1e-7, 1e-6, 1e-5, 5e-5]}
+    
+    cv_sets = ShuffleSplit(n_splits = 5, test_size = 0.2, random_state = 0)
+    regressor = xgb.XGBClassifier()
+    t0 = time()
+    grid = GridSearchCV(estimator = regressor, param_grid = params,
+                        scoring = 'neg_mean_squared_error', cv = cv_sets)
+    
+    grid = grid.fit(Xtrain, ytrain)
+
+    test_score = rmse(grid.predict(Xval), yval)
+    print('Time algo takes: {:.3f} seconds'.format(time() - t0))
+    print('Train error: {:.4f} ({:.2f}%)'.format(np.sqrt(-grid.best_score_), np.sqrt(-grid.best_score_) / np.mean(ytrain) * 100))
     print('Test error: {:.4f} ({:.2f}%)'.format(test_score, test_score / np.mean(yval) * 100))
     
     print(grid.best_estimator_)
@@ -272,4 +378,8 @@ def Lasso_Robust(Xtrain, Xval, ytrain, yval):
 
     pass
 
-Lasso_GSCV(PCA_Xtrain, PCA_Xval, PCA_ytrain['Adj Close 1day'], PCA_yval['Adj Close 1day'])
+#Lasso_GSCV(df_Xtrain, df_Xval, df_ytrain['Adj Close 5day pct_change'],
+#           df_yval['Adj Close 5day pct_change'])
+
+XGBR_GSCV(df_Xtrain, df_Xval, df_ytrain['Adj Close 1day pct_change cls'],
+          df_yval['Adj Close 1day pct_change cls'])
