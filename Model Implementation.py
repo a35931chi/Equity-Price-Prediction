@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split, ShuffleSplit, GridSearchCV
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import RobustScaler
 
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import make_scorer, mean_squared_error, accuracy_score
 
 from sklearn.linear_model import Lasso
 import xgboost as xgb
@@ -164,42 +164,65 @@ def XGBR_GSCV(Xtrain, Xval, ytrain, yval):
               'max_depth': range(1, 10)}
     no PCA:
     Adj Close 1day pct_change cls:
-    Time algo takes: 1720.520 seconds
-    Train error: 0.6880 (133.59%)
-    Test error: 0.7008 (130.05%)
+    Time algo takes: 1415.932 seconds
+    Train accuracy: 0.5273
+    Test accuracy: 0.7008
     XGBClassifier(base_score=0.5, colsample_bylevel=1, colsample_bytree=1,
            gamma=0, learning_rate=0.1, max_delta_step=0, max_depth=6,
-           min_child_weight=1, missing=None, n_estimators=1000, nthread=-1,
-           objective='binary:logistic', reg_alpha=1e-05, reg_lambda=1,
+           min_child_weight=1, missing=None, n_estimators=800, nthread=-1,
+           objective='binary:logistic', reg_alpha=7.5e-06, reg_lambda=1,
            scale_pos_weight=1, seed=0, silent=True, subsample=1)
 
     Adj Close 5day pct_change cls:
+    Time algo takes: 2725.627 seconds
+    Train accuracy: 0.5884
+    Test accuracy: 0.6301
+    XGBClassifier(base_score=0.5, colsample_bylevel=1, colsample_bytree=1,
+           gamma=0, learning_rate=0.025, max_delta_step=0, max_depth=6,
+           min_child_weight=1, missing=None, n_estimators=800, nthread=-1,
+           objective='binary:logistic', reg_alpha=1e-05, reg_lambda=1,
+           scale_pos_weight=1, seed=0, silent=True, subsample=1)
     
     PCA:
     Adj Close 1day pct_change cls:
-    
+    Time algo takes: 1102.951 seconds
+    Train accuracy: 0.5215
+    Test accuracy: 0.6669
+    XGBClassifier(base_score=0.5, colsample_bylevel=1, colsample_bytree=1,
+           gamma=0, learning_rate=0.1, max_delta_step=0, max_depth=3,
+           min_child_weight=1, missing=None, n_estimators=1100, nthread=-1,
+           objective='binary:logistic', reg_alpha=0.01, reg_lambda=1,
+           scale_pos_weight=1, seed=0, silent=True, subsample=1)
 
     Adj Close 5day pct_change cls:
-    
+    Time algo takes: 1105.034 seconds
+    Train accuracy: 0.5638
+    Test accuracy: 0.6535
+    XGBClassifier(base_score=0.5, colsample_bylevel=1, colsample_bytree=1,
+           gamma=0, learning_rate=0.01, max_delta_step=0, max_depth=2,
+           min_child_weight=1, missing=None, n_estimators=800, nthread=-1,
+           objective='binary:logistic', reg_alpha=0.1, reg_lambda=1,
+           scale_pos_weight=1, seed=0, silent=True, subsample=1)    
     '''
     print('XGBoost GridSearchCV: ', strftime('%d %b %Y %H:%M:%S', gmtime()))
-    params = {'learning_rate': [0.01, 0.05, 0.1, 0.5, 1],
-              'max_depth': [4, 5, 6, 7, 8],
-              'n_estimators': [500, 600, 700, 800, 900, 1000, 1100],
-              'reg_alpha': [1e-7, 1e-6, 1e-5, 5e-5]}
+    params = {'learning_rate': [1e-4, 1e-3, 1e-2, 1e-1],
+              'max_depth': [2, 3, 4, 5, 6],
+              'n_estimators': [800, 900, 1000, 1100],
+              'reg_alpha': [1e-4, 1e-3, 1e-2, 1e-1]}
     
     cv_sets = ShuffleSplit(n_splits = 5, test_size = 0.2, random_state = 0)
-    regressor = xgb.XGBClassifier()
+    clfier = xgb.XGBClassifier()
+    acc_scorer = make_scorer(accuracy_score)
     t0 = time()
-    grid = GridSearchCV(estimator = regressor, param_grid = params,
-                        scoring = 'neg_mean_squared_error', cv = cv_sets)
+    grid = GridSearchCV(estimator = clfier, param_grid = params,
+                        scoring = acc_scorer, cv = cv_sets)
     
     grid = grid.fit(Xtrain, ytrain)
 
     test_score = rmse(grid.predict(Xval), yval)
     print('Time algo takes: {:.3f} seconds'.format(time() - t0))
-    print('Train error: {:.4f} ({:.2f}%)'.format(np.sqrt(-grid.best_score_), np.sqrt(-grid.best_score_) / np.mean(ytrain) * 100))
-    print('Test error: {:.4f} ({:.2f}%)'.format(test_score, test_score / np.mean(yval) * 100))
+    print('Train accuracy: {:.4f}'.format(grid.best_score_))
+    print('Test accuracy: {:.4f}'.format(test_score))
     
     print(grid.best_estimator_)
     #print(grid.cv_results_)
@@ -381,5 +404,5 @@ def Lasso_Robust(Xtrain, Xval, ytrain, yval):
 #Lasso_GSCV(df_Xtrain, df_Xval, df_ytrain['Adj Close 5day pct_change'],
 #           df_yval['Adj Close 5day pct_change'])
 
-XGBR_GSCV(df_Xtrain, df_Xval, df_ytrain['Adj Close 1day pct_change cls'],
-          df_yval['Adj Close 1day pct_change cls'])
+XGBR_GSCV(PCA_Xtrain, PCA_Xval, PCA_ytrain['Adj Close 1day pct_change cls'],
+          PCA_yval['Adj Close 1day pct_change cls'])
