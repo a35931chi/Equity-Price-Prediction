@@ -508,23 +508,31 @@ X_test, y_test = window_transform_series(df_Xtest, df_ytest[:, 0], window_size =
 4:'Adj Close 1day pct_change cls'
 5:'Adj Close 5day pct_change cls'
 '''
-print(X_train[:10])
-what = input('bookmark')
 # X_train.shape: (3656, 5, 10) and y_train.shape: (3656, 1)
 #3656 is the number of rows, 5 is the batch_size/window_size, 10 is the number of features
 
 # NOTE: to use keras's RNN LSTM module our input must be reshaped to [samples, window size, stepsize] 
-#X_train = np.asarray(np.reshape(X_train, (X_train.shape[0], X_train.shape[2], window_size, 1))) #(3051, 7, 1)
-#X_test = np.asarray(np.reshape(X_test, (X_test.shape[0], X_test.shape[2], window_size, 1)))
-
-model = Sequential()
-model.add(LSTM(7, input_shape = (X_train[1], X_train[2])))
-model.add(Dense(1))
-
+print(X_train.shape, X_test.shape)
+wait = input('bookmark')
 epoch = 10
 batch_size = 100
+
+model = Sequential()
+
+model.add(LSTM(7, input_shape = (X_train.shape[1], X_train.shape[2])))
+
+model.add(Dense(1))
 
 optimizer = keras.optimizers.RMSprop(lr = 0.001, rho = 0.9, epsilon = 1e-08, decay = 0.0)
 model.compile(loss = 'mean_squared_error', optimizer = optimizer)
 
+t0 = time()
 model.fit(X_train, y_train, epochs = epoch, batch_size = batch_size, verbose = 0)
+
+training_error = model.evaluate(X_train, y_train, verbose=0)
+testing_error = model.evaluate(X_test, y_test, verbose=0)
+
+print('Time algo takes: {:.3f} seconds'.format(time() - t0))
+print('Train error: {:.4f} ({:.2f}%)'.format(np.sqrt(training_error), np.sqrt(training_error) / np.mean(y_train) * 100))
+print('Test error: {:.4f} ({:.2f}%)'.format(testing_error, testing_error / np.mean(y_test) * 100))
+
