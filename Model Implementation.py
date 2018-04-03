@@ -451,7 +451,7 @@ def LSTM_GSCV(Xtrain, Xval, ytrain, yval): #algorithms = , n_neighbors =
     '''
     def LSTM_R1(optimizer):
         model = Sequential()
-        model.add(LSTM(7, input_shape = (window_size, 1)))
+        model.add(LSTM(7, input_shape = (Xtrain.shape[1], Xtrain.shape[2])))
         model.add(Dense(1))
 
         model.compile(loss = 'mean_squared_error', optimizer = optimizer)
@@ -470,7 +470,7 @@ def LSTM_GSCV(Xtrain, Xval, ytrain, yval): #algorithms = , n_neighbors =
     grid = GridSearchCV(estimator = regressor, param_grid = params,
                         scoring = 'neg_mean_squared_error', cv = cv_sets)
 
-    grid = grid.fit(Xtrain.as_matrix(), ytrain.as_matrix())
+    grid = grid.fit(Xtrain, ytrain)
 
     test_score = rmse(grid.predict(Xval.as_matrix()), yval.as_matrix())
     print('Time algo takes: {:.3f} seconds'.format(time() - t0))
@@ -495,8 +495,6 @@ def LSTM_GSCV(Xtrain, Xval, ytrain, yval): #algorithms = , n_neighbors =
 
 
 #LSTM
-
-
 window_size = 5
 X_train, y_train = window_transform_series(df_Xtrain, df_ytrain[:, 0], window_size = window_size)
 X_test, y_test = window_transform_series(df_Xtest, df_ytest[:, 0], window_size = window_size)
@@ -511,9 +509,10 @@ X_test, y_test = window_transform_series(df_Xtest, df_ytest[:, 0], window_size =
 # X_train.shape: (3656, 5, 10) and y_train.shape: (3656, 1)
 #3656 is the number of rows, 5 is the batch_size/window_size, 10 is the number of features
 
-# NOTE: to use keras's RNN LSTM module our input must be reshaped to [samples, window size, stepsize] 
-print(X_train.shape, X_test.shape)
-wait = input('bookmark')
+# NOTE: to use keras's RNN LSTM module our input must be reshaped to [samples, window size, stepsize]
+
+LSTM_GSCV(X_train, X_test, y_train, y_test)
+'''
 epoch = 10
 batch_size = 100
 
@@ -532,7 +531,4 @@ model.fit(X_train, y_train, epochs = epoch, batch_size = batch_size, verbose = 0
 training_error = model.evaluate(X_train, y_train, verbose=0)
 testing_error = model.evaluate(X_test, y_test, verbose=0)
 
-print('Time algo takes: {:.3f} seconds'.format(time() - t0))
-print('Train error: {:.4f} ({:.2f}%)'.format(np.sqrt(training_error), np.sqrt(training_error) / np.mean(y_train) * 100))
-print('Test error: {:.4f} ({:.2f}%)'.format(testing_error, testing_error / np.mean(y_test) * 100))
-
+'''
