@@ -17,6 +17,8 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
 from keras.layers import Activation
+from keras.wrappers.scikit_learn import KerasRegressor
+
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -24,15 +26,27 @@ import seaborn as sns
 from Extract_Data import extract_data
 
 pca, PCA_df, df = extract_data('AAPL')
-PCA_df = shuffle(PCA_df, random_state = 0)
+PCA_df_rand = shuffle(PCA_df, random_state = 0)
+df_rand = shuffle(df, random_state = 0)
+
+PCA_rand_X = PCA_df_rand[['Dimension 1', 'Dimension 2', 'Dimension 3', 'Dimension 4',
+                          'Dimension 5', 'Dimension 6', 'Dimension 7']]
+PCA_rand_y = PCA_df_rand[['Adj Close 1day', 'Adj Close 5day',
+                          'Adj Close 1day pct_change', 'Adj Close 5day pct_change',
+                          'Adj Close 1day pct_change cls', 'Adj Close 5day pct_change cls']]
 
 PCA_X = PCA_df[['Dimension 1', 'Dimension 2', 'Dimension 3', 'Dimension 4',
-                   'Dimension 5', 'Dimension 6', 'Dimension 7']]
+                'Dimension 5', 'Dimension 6', 'Dimension 7']]
 PCA_y = PCA_df[['Adj Close 1day', 'Adj Close 5day',
                 'Adj Close 1day pct_change', 'Adj Close 5day pct_change',
                 'Adj Close 1day pct_change cls', 'Adj Close 5day pct_change cls']]
 
-df = shuffle(df, random_state = 0)
+df_rand_X = df_rand[['Open', 'High', 'Low', 'Adj Close', 'Volume', 'Range', 'MA5 Adj Close', 'MA5 Volume',
+                     'MA5 Adj Close pct_change', 'MA5 Volume pct_change']]
+df_rand_y = df_rand[['Adj Close 1day', 'Adj Close 5day', 'Adj Close 1day pct_change',
+                     'Adj Close 5day pct_change', 'Adj Close 1day pct_change cls',
+                     'Adj Close 5day pct_change cls']]
+
 df_X = df[['Open', 'High', 'Low', 'Adj Close', 'Volume', 'Range', 'MA5 Adj Close', 'MA5 Volume',
            'MA5 Adj Close pct_change', 'MA5 Volume pct_change']]
 df_y = df[['Adj Close 1day', 'Adj Close 5day', 'Adj Close 1day pct_change',
@@ -40,17 +54,20 @@ df_y = df[['Adj Close 1day', 'Adj Close 5day', 'Adj Close 1day pct_change',
            'Adj Close 5day pct_change cls']]
 
 #split into train, test, validation sets
-PCA_Xtrain, PCA_Xtest, PCA_ytrain, PCA_ytest = train_test_split(PCA_X, PCA_y, test_size = 0.2,
-                                                                random_state = 42)
+PCA_rand_Xtrain, PCA_rand_Xtest, PCA_rand_ytrain, PCA_rand_ytest = train_test_split(PCA_rand_X, PCA_rand_y,
+                                                                                    test_size = 0.2)
 
-PCA_Xtrain, PCA_Xval, PCA_ytrain, PCA_yval = train_test_split(PCA_Xtrain, PCA_ytrain, test_size = 0.2,
-                                                                random_state = 42)
+n_split = int(len(df_y) * 0.8)
+PCA_Xtrain, PCA_ytrain = np.array(PCA_X)[:n_split, :], np.array(PCA_y)[:n_split] 
+PCA_Xtest, PCA_ytest = np.array(PCA_X)[n_split:, :], np.array(PCA_y)[n_split:]
 
 
-df_Xtrain, df_Xtest, df_ytrain, df_ytest = train_test_split(df_X, df_y, test_size = 0.2,
-                                                            random_state = 42)
-df_Xtrain, df_Xval, df_ytrain, df_yval = train_test_split(df_Xtrain, df_ytrain, test_size = 0.2,
-                                                          random_state = 42)
+
+df_rand_Xtrain, df_rand_Xtest, df_rand_ytrain, df_rand_ytest = train_test_split(df_rand_X, df_rand_y,
+                                                                                test_size = 0.2)
+
+df_Xtrain, df_ytrain = np.array(df_X)[:n_split, :], np.array(df_y)[:n_split] 
+df_Xtest, df_ytest = np.array(df_X)[n_split:, :], np.array(df_y)[n_split:]
 
 
 #try benchmark models:
@@ -401,8 +418,113 @@ def Lasso_Robust(Xtrain, Xval, ytrain, yval):
 
     pass
 
+def window_transform_series(X, y, window_size):
+    # containers for input/output pairs
+    X_result = []
+    y_result = []
+    #print(series)
+    #print(window_size)
+    for i in range(len(y) - window_size):
+        X_result.append(X[i: i + window_size])
+        y_result.append(y[i + window_size])
+        #print(i)
+        #print(series[i: i + window_size])
+        #print(series[i + window_size])
+    # reshape each
+
+    X_result = np.asarray(X_result)
+    X_result.shape = (np.shape(X_result)[0:3])
+
+    y_result = np.asarray(y_result)
+    y_result.shape = (len(y_result), 1)
+
+    return X_result, y_result
+
+def LSTM_GSCV(Xtrain, Xval, ytrain, yval): #algorithms = , n_neighbors =
+    '''
+    no PCA:
+
+
+    PCA:
+
+
+    '''
+    def LSTM_R1(optimizer):
+        model = Sequential()
+        model.add(LSTM(7, input_shape = (window_size, 1)))
+        model.add(Dense(1))
+
+        model.compile(loss = 'mean_squared_error', optimizer = optimizer)
+        return model
+
+    custom_opt = keras.optimizers.RMSprop(lr = 0.001, rho = 0.9, epsilon = 1e-08, decay = 0.0)
+    
+    params = {'batch_size': [25, 30, 50],
+              'epochs': [100, 500, 1000],
+              'optimizer': ['adam', 'rmsprop', custom_opt]}
+    
+    print('Keras GridSearchCV: ', strftime('%d %b %Y %H:%M:%S', gmtime()))
+    cv_sets = ShuffleSplit(n_splits = 5, test_size = 0.2, random_state = 0)
+    regressor = KerasRegressor(build_fn = LSTM_R1, verbose = False)
+    t0 = time()
+    grid = GridSearchCV(estimator = regressor, param_grid = params,
+                        scoring = 'neg_mean_squared_error', cv = cv_sets)
+
+    grid = grid.fit(Xtrain.as_matrix(), ytrain.as_matrix())
+
+    test_score = rmse(grid.predict(Xval.as_matrix()), yval.as_matrix())
+    print('Time algo takes: {:.3f} seconds'.format(time() - t0))
+    print('Train error: {:.4f} ({:.2f}%)'.format(np.sqrt(-grid.best_score_), np.sqrt(-grid.best_score_) / np.mean(ytrain) * 100))
+    print('Test error: {:.4f} ({:.2f}%)'.format(test_score, test_score / np.mean(yval) * 100))
+    
+    print(grid.best_estimator_)
+    print(grid.best_params_)
+    print(grid.best_score_)
+    #print(grid.best_index_)
+    #print(grid.cv_results_)
+    pass
+
+
+#benchmark models: get a rough idea on what type of error/accuracy we can achieve
 #Lasso_GSCV(df_Xtrain, df_Xval, df_ytrain['Adj Close 5day pct_change'],
 #           df_yval['Adj Close 5day pct_change'])
 
-XGBR_GSCV(PCA_Xtrain, PCA_Xval, PCA_ytrain['Adj Close 1day pct_change cls'],
-          PCA_yval['Adj Close 1day pct_change cls'])
+#XGBR_GSCV(PCA_Xtrain, PCA_Xval, PCA_ytrain['Adj Close 1day pct_change cls'],
+#          PCA_yval['Adj Close 1day pct_change cls'])
+
+
+
+#LSTM
+
+
+window_size = 5
+X_train, y_train = window_transform_series(df_Xtrain, df_ytrain[:, 0], window_size = window_size)
+X_test, y_test = window_transform_series(df_Xtest, df_ytest[:, 0], window_size = window_size)
+'''
+0:'Adj Close 1day'
+1:'Adj Close 5day'
+2:'Adj Close 1day pct_change'
+3:'Adj Close 5day pct_change'
+4:'Adj Close 1day pct_change cls'
+5:'Adj Close 5day pct_change cls'
+'''
+print(X_train[:10])
+what = input('bookmark')
+# X_train.shape: (3656, 5, 10) and y_train.shape: (3656, 1)
+#3656 is the number of rows, 5 is the batch_size/window_size, 10 is the number of features
+
+# NOTE: to use keras's RNN LSTM module our input must be reshaped to [samples, window size, stepsize] 
+#X_train = np.asarray(np.reshape(X_train, (X_train.shape[0], X_train.shape[2], window_size, 1))) #(3051, 7, 1)
+#X_test = np.asarray(np.reshape(X_test, (X_test.shape[0], X_test.shape[2], window_size, 1)))
+
+model = Sequential()
+model.add(LSTM(7, input_shape = (X_train[1], X_train[2])))
+model.add(Dense(1))
+
+epoch = 10
+batch_size = 100
+
+optimizer = keras.optimizers.RMSprop(lr = 0.001, rho = 0.9, epsilon = 1e-08, decay = 0.0)
+model.compile(loss = 'mean_squared_error', optimizer = optimizer)
+
+model.fit(X_train, y_train, epochs = epoch, batch_size = batch_size, verbose = 0)

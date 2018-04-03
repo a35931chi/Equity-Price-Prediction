@@ -13,7 +13,7 @@ from keras.layers import Activation
 import matplotlib.pyplot as plt
 
 #load prices
-df = pd.read_csv('Data/AAPL.csv', index_col = 'Date')
+df = pd.read_csv('Data/AAPL-yahoo.csv', index_col = 'Date')
 
 #normalize
 df['Norm Adj Close'] = (df['Adj Close'] - df['Adj Close'].mean()) / (df['Adj Close'].max() - df['Adj Close'].min())
@@ -59,9 +59,14 @@ def window_transform_series(series, window_size):
         #print(i)
         #print(series[i: i + window_size])
         #print(series[i + window_size])
-    # reshape each 
+    # reshape each
+    print(type(X))
     X = np.asarray(X)
+    print(type(X))
+    print(np.shape(X)[0:2])
     X.shape = (np.shape(X)[0:2])
+    print(X.shape)
+    what = input('what')
     y = np.asarray(y)
     y.shape = (len(y),1)
 
@@ -104,6 +109,9 @@ if True:
             for batch_size in batch_sizes:
                 X, y = window_transform_series(series = data_adjclose,
                                                window_size = window_size)
+                print(type(X), type(y))
+                print(X.shape, y.shape)
+                what = input('what')
 
                 # X.shape: (4576,7) and y.shape: (4576, 1)
                 # split our dataset into training / testing sets
