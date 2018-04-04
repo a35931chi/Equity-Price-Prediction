@@ -25,7 +25,7 @@ df_aapl = pd.read_csv('Data/AAPL.csv', index_col = 'Date')
 SS_scaler = StandardScaler()
 SS_np_aapl = SS_scaler.fit_transform(df_aapl)
 
-MS_scaler = MinMaxScaler(feature_range=(0, 1))
+MS_scaler = MinMaxScaler(feature_range=(0.0001, 1))
 MS_np_aapl = MS_scaler.fit_transform(df_aapl)
 
 #print('np_aapl')

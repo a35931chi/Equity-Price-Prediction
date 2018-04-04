@@ -459,9 +459,9 @@ def LSTM_GSCV(Xtrain, Xval, ytrain, yval): #algorithms = , n_neighbors =
 
     custom_opt = keras.optimizers.RMSprop(lr = 0.001, rho = 0.9, epsilon = 1e-08, decay = 0.0)
     
-    params = {'batch_size': [25, 30, 50],
-              'epochs': [100, 500, 1000],
-              'optimizer': ['adam', 'rmsprop', custom_opt]}
+    params = {'batch_size': [10, 100, 500],
+              'epochs': [1000, 2000],
+              'optimizer': ['adam']}
     
     print('Keras GridSearchCV: ', strftime('%d %b %Y %H:%M:%S', gmtime()))
     cv_sets = ShuffleSplit(n_splits = 5, test_size = 0.2, random_state = 0)
@@ -472,14 +472,14 @@ def LSTM_GSCV(Xtrain, Xval, ytrain, yval): #algorithms = , n_neighbors =
 
     grid = grid.fit(Xtrain, ytrain)
 
-    test_score = rmse(grid.predict(Xval.as_matrix()), yval.as_matrix())
+    test_score = rmse(grid.predict(Xval), yval)
     print('Time algo takes: {:.3f} seconds'.format(time() - t0))
     print('Train error: {:.4f} ({:.2f}%)'.format(np.sqrt(-grid.best_score_), np.sqrt(-grid.best_score_) / np.mean(ytrain) * 100))
     print('Test error: {:.4f} ({:.2f}%)'.format(test_score, test_score / np.mean(yval) * 100))
     
-    print(grid.best_estimator_)
+    #print(grid.best_estimator_)
     print(grid.best_params_)
-    print(grid.best_score_)
+    #print(grid.best_score_)
     #print(grid.best_index_)
     #print(grid.cv_results_)
     pass

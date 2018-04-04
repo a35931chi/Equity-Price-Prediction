@@ -43,6 +43,7 @@ if False:
     model.compile(loss='mean_absolute_error', optimizer='adam')
     model.fit(data, target, nb_epoch=2000, batch_size=1, verbose=2)
 
+#https://machinelearningmastery.com/multivariate-time-series-forecasting-lstms-keras/
 if False: #train on one timestep
     from pandas import read_csv
     from datetime import datetime
