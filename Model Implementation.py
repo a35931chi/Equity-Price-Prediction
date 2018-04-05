@@ -149,8 +149,8 @@ def Lasso_GSCV(Xtrain, Xval, ytrain, yval):
 
     '''
     print('Lasso GridSearchCV: ', strftime('%d %b %Y %H:%M:%S', gmtime()))
-    params = {'alpha': [1e-10, 1e-09, 1e-08, 1e-07, 1e-06, 1e-05, 1e-04, 1e-03],
-              'max_iter': [1e1, 1e2, 1e3, 1e4, 1e5]}
+    params = {'alpha': [1e-10, 1e-09, 1e-08, 1e-07, 1e-06, 1e-05, 1e-04, 1e-03, 1e-02, 1e-01],
+              'max_iter': [1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7]}
     
     cv_sets = ShuffleSplit(n_splits = 5, test_size = 0.2, random_state = 0)
     t0 = time()
@@ -167,8 +167,8 @@ def Lasso_GSCV(Xtrain, Xval, ytrain, yval):
     print('Test error: {:.4f} ({:.2f}%)'.format(test_score, test_score / np.mean(yval) * 100))
     
     print(grid.best_estimator_)
-    #print(grid.cv_results_)
-    pass
+    print(grid.cv_results_)
+    return grid.cv_results_
 
 def XGBR_GSCV(Xtrain, Xval, ytrain, yval):
     '''
@@ -222,10 +222,10 @@ def XGBR_GSCV(Xtrain, Xval, ytrain, yval):
            scale_pos_weight=1, seed=0, silent=True, subsample=1)    
     '''
     print('XGBoost GridSearchCV: ', strftime('%d %b %Y %H:%M:%S', gmtime()))
-    params = {'learning_rate': [1e-4, 1e-3, 1e-2, 1e-1],
-              'max_depth': [2, 3, 4, 5, 6],
-              'n_estimators': [800, 900, 1000, 1100],
-              'reg_alpha': [1e-4, 1e-3, 1e-2, 1e-1]}
+    params = {'learning_rate': [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1],
+              'max_depth': [2, 3, 4, 5, 6, 7, 8, 9, 10],
+              'n_estimators': [600, 700, 800, 900, 1000, 1100, 1200, 1300],
+              'reg_alpha': [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1]}
     
     cv_sets = ShuffleSplit(n_splits = 5, test_size = 0.2, random_state = 0)
     clfier = xgb.XGBClassifier()
@@ -242,8 +242,8 @@ def XGBR_GSCV(Xtrain, Xval, ytrain, yval):
     print('Test accuracy: {:.4f}'.format(test_score))
     
     print(grid.best_estimator_)
-    #print(grid.cv_results_)
-    pass
+    print(grid.cv_results_)
+    return grid.cv_results_
 
 def Lasso_Robust(Xtrain, Xval, ytrain, yval):
     '''
@@ -275,7 +275,7 @@ def Lasso_Robust(Xtrain, Xval, ytrain, yval):
         plt.axhline(np.mean(rmse), linestyle = ':', color = 'r', label = 'mean RMSE')
         plt.legend()
         plt.tight_layout()
-        plt.savefig('RMSE for each KFold.png')
+        #plt.savefig('RMSE for each KFold.png')
         plt.show()
         
     if True: #try different random states
@@ -303,7 +303,7 @@ def Lasso_Robust(Xtrain, Xval, ytrain, yval):
         plt.show()
 
     #try small changes to the dataset
-    if True: 
+    if False: 
         #deletion observations points
         yidx = Xtrain.shape[0]
         error = []
@@ -346,7 +346,7 @@ def Lasso_Robust(Xtrain, Xval, ytrain, yval):
         plt.savefig('test RMSE vs % data removed.png')
         plt.show()
         
-    if True:
+    if False:
         #select some observations and mutiply some points by 10
         yidx = Xtrain.shape[0]
         error_m = []
@@ -440,6 +440,8 @@ def window_transform_series(X, y, window_size):
 
     return X_result, y_result
 
+#is it a good idea to tune LSTM using gridsearchCV??
+#https://machinelearningmastery.com/tune-lstm-hyperparameters-keras-time-series-forecasting/
 def LSTM_GSCV(Xtrain, Xval, ytrain, yval): #algorithms = , n_neighbors =
     '''
     1 LSTM layer, 7 nodes
@@ -522,21 +524,7 @@ def LSTM_GSCV(Xtrain, Xval, ytrain, yval): #algorithms = , n_neighbors =
     #print(grid.cv_results_)
     pass
 
-
-#benchmark models: get a rough idea on what type of error/accuracy we can achieve
-#Lasso_GSCV(df_Xtrain, df_Xval, df_ytrain['Adj Close 5day pct_change'],
-#           df_yval['Adj Close 5day pct_change'])
-
-#XGBR_GSCV(PCA_Xtrain, PCA_Xval, PCA_ytrain['Adj Close 1day pct_change cls'],
-#          PCA_yval['Adj Close 1day pct_change cls'])
-
-
-
-#LSTM
-window_size = 5
-X_train, y_train = window_transform_series(df_Xtrain, df_ytrain[:, 1], window_size = window_size)
-X_test, y_test = window_transform_series(df_Xtest, df_ytest[:, 1], window_size = window_size)
-''' 
+''' my target variables
 0:'Adj Close 1day'
 1:'Adj Close 5day'
 2:'Adj Close 1day pct_change'
@@ -544,12 +532,77 @@ X_test, y_test = window_transform_series(df_Xtest, df_ytest[:, 1], window_size =
 4:'Adj Close 1day pct_change cls'
 5:'Adj Close 5day pct_change cls'
 '''
+
+#benchmark models: get a rough idea on what type of error/accuracy we can achieve
+'''
+variable = 'Adj Close 5day pct_change'
+results_dict = Lasso_GSCV(PCA_rand_Xtrain,
+                          PCA_rand_Xtest,
+                          PCA_rand_ytrain[variable],
+                          PCA_rand_ytest[variable])
+
+
+result = pd.DataFrame()
+result['param_max_iter'] = results_dict['param_max_iter'].data
+result['param_alpha'] = results_dict['param_alpha'].data
+result['mean_train_score'] = results_dict['mean_train_score'].data
+result['mean_test_score'] = results_dict['mean_test_score'].data
+print(df_rand_ytrain[variable].mean(), df_rand_ytest[variable].mean())
+result.to_csv('temp.csv')
+
+'''
+variable = 'Adj Close 1day pct_change cls'
+results_dict = XGBR_GSCV(PCA_rand_Xtrain,
+                         PCA_rand_Xtest,
+                         PCA_rand_ytrain[variable],
+                         PCA_rand_ytest[variable])
+
+result = pd.DataFrame()
+
+result['param_learning_rate'] = results_dict['param_learning_rate'].data
+result['param_max_depth'] = results_dict['param_max_depth'].data
+result['param_n_estimators'] = results_dict['param_n_estimators'].data
+result['param_reg_alpha'] = results_dict['param_reg_alpha'].data
+
+result['mean_train_score'] = results_dict['mean_train_score'].data
+result['mean_test_score'] = results_dict['mean_test_score'].data
+
+param_learning_rate = result.groupby('param_learning_rate').mean()
+param_learning_rate['train avg'] = result.groupby('param_learning_rate').mean()['mean_train_score']/df_rand_ytrain[variable].mean()
+param_learning_rate['test avg'] = result.groupby('param_learning_rate').mean()['mean_test_score']/df_rand_ytest[variable].mean()
+
+param_max_depth = result.groupby('param_max_depth').mean()
+param_max_depth['train avg'] = result.groupby('param_max_depth').mean()['mean_train_score']/df_rand_ytrain[variable].mean()
+param_max_depth['test avg'] = result.groupby('param_max_depth').mean()['mean_test_score']/df_rand_ytest[variable].mean()
+
+param_n_estimators = result.groupby('param_n_estimators').mean()
+param_n_estimators['train avg'] = result.groupby('param_n_estimators').mean()['mean_train_score']/df_rand_ytrain[variable].mean()
+param_n_estimators['test avg'] = result.groupby('param_n_estimators').mean()['mean_test_score']/df_rand_ytest[variable].mean()
+
+param_reg_alpha = result.groupby('param_reg_alpha').mean()
+param_reg_alpha['train avg'] = result.groupby('param_reg_alpha').mean()['mean_train_score']/df_rand_ytrain[variable].mean()
+param_reg_alpha['test avg'] = result.groupby('param_reg_alpha').mean()['mean_test_score']/df_rand_ytest[variable].mean()
+
+print('param_learning_rate')
+print(param_learning_rate)
+print('param_max_depth')
+print(param_max_depth)
+print('param_n_estimators')
+print(param_n_estimators)
+print('param_reg_alpha')
+print(param_reg_alpha)
+
+#LSTM
+window_size = 5
+X_train, y_train = window_transform_series(df_Xtrain, df_ytrain[:, 2], window_size = window_size)
+X_test, y_test = window_transform_series(df_Xtest, df_ytest[:, 2], window_size = window_size)
+
 # X_train.shape: (3656, 5, 10) and y_train.shape: (3656, 1)
 #3656 is the number of rows, 5 is the batch_size/window_size, 10 is the number of features
 
 # NOTE: to use keras's RNN LSTM module our input must be reshaped to [samples, window size, stepsize]
 
-LSTM_GSCV(X_train, X_test, y_train, y_test)
+#LSTM_GSCV(X_train, X_test, y_train, y_test)
 '''
 epoch = 10
 batch_size = 100
