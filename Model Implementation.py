@@ -442,26 +442,64 @@ def window_transform_series(X, y, window_size):
 
 def LSTM_GSCV(Xtrain, Xval, ytrain, yval): #algorithms = , n_neighbors =
     '''
+    1 LSTM layer, 7 nodes
     no PCA:
+    Adj Close 1day:
+    Time algo takes: 13177.082 seconds
+    Train error: 0.0333 (1.46%)
+    Test error: 0.2685 (5.60%)
+    {'epochs': 2000, 'batch_size': 100, 'optimizer': 'adam'}
+    
+    Adj Close 5day:
+    Time algo takes: 3624.319 seconds
+    Train error: 0.0531 (2.33%)
+    Test error: 0.2524 (5.26%)
+    {'epochs': 2000, 'optimizer': 'adam', 'batch_size': 100}
 
+    Adj Close 1day pct_change:
+    Time algo takes: 3828.331 seconds
+    Train error: 0.0300 (2150.61%)
+    Test error: 0.0158 (1914.73%)
+    {'epochs': 2000, 'optimizer': 'rmsprop', 'batch_size': 100}
+    
+    Adj Close 5day pct_change:
+    no activation:
+    Time algo takes: 3761.260 seconds
+    Train error: 0.0609 (893.32%)
+    Test error: 0.0327 (818.15%)
+    {'optimizer': 'adam', 'batch_size': 500, 'epochs': 2000}
+    relu activation: 
+    Time algo takes: 3692.415 seconds
+    Train error: 0.0614 (901.43%)
+    Test error: 0.0321 (804.29%)
+    {'batch_size': 500, 'optimizer': <keras.optimizers.RMSprop object at 0x00000206C9AD86A0>, 'epochs': 2000}
 
     PCA:
+    Adj Close 1day:
+    Time algo takes: 3551.971 seconds
+    Train error: 0.0313 (1.38%)
+    Test error: 0.1698 (3.54%)
+    {'optimizer': 'adam', 'epochs': 2000, 'batch_size': 500}
 
+
+    Adj Close 1day pct_change cls:
+    Adj Close 5day pct_change cls:
 
     '''
     def LSTM_R1(optimizer):
         model = Sequential()
-        model.add(LSTM(7, input_shape = (Xtrain.shape[1], Xtrain.shape[2])))
+        model.add(LSTM(10, input_shape = (Xtrain.shape[1], Xtrain.shape[2])))
         model.add(Dense(1))
+        model.add(Activation('relu')) #None, 'sigmoid', 'relu', 'softmax'
 
         model.compile(loss = 'mean_squared_error', optimizer = optimizer)
         return model
 
     custom_opt = keras.optimizers.RMSprop(lr = 0.001, rho = 0.9, epsilon = 1e-08, decay = 0.0)
     
-    params = {'batch_size': [10, 100, 500],
-              'epochs': [1000, 2000],
-              'optimizer': ['adam']}
+    params = {'batch_size': [100, 500],
+              'epochs': [1000],
+              'optimizer': [custom_opt, 'rmsprop', 'adam']}
     
     print('Keras GridSearchCV: ', strftime('%d %b %Y %H:%M:%S', gmtime()))
     cv_sets = ShuffleSplit(n_splits = 5, test_size = 0.2, random_state = 0)
@@ -496,9 +534,9 @@ def LSTM_GSCV(Xtrain, Xval, ytrain, yval): #algorithms = , n_neighbors =
 
 #LSTM
 window_size = 5
-X_train, y_train = window_transform_series(df_Xtrain, df_ytrain[:, 0], window_size = window_size)
-X_test, y_test = window_transform_series(df_Xtest, df_ytest[:, 0], window_size = window_size)
-'''
+X_train, y_train = window_transform_series(df_Xtrain, df_ytrain[:, 1], window_size = window_size)
+X_test, y_test = window_transform_series(df_Xtest, df_ytest[:, 1], window_size = window_size)
+''' 
 0:'Adj Close 1day'
 1:'Adj Close 5day'
 2:'Adj Close 1day pct_change'
