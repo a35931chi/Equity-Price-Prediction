@@ -442,87 +442,29 @@ def window_transform_series(X, y, window_size):
 
 #is it a good idea to tune LSTM using gridsearchCV??
 #https://machinelearningmastery.com/tune-lstm-hyperparameters-keras-time-series-forecasting/
-def LSTM_GSCV(Xtrain, Xval, ytrain, yval): #algorithms = , n_neighbors =
-    '''
-    1 LSTM layer, 7 nodes
-    no PCA:
-    Adj Close 1day:
-    Time algo takes: 13177.082 seconds
-    Train error: 0.0333 (1.46%)
-    Test error: 0.2685 (5.60%)
-    {'epochs': 2000, 'batch_size': 100, 'optimizer': 'adam'}
-    
-    Adj Close 5day:
-    Time algo takes: 3624.319 seconds
-    Train error: 0.0531 (2.33%)
-    Test error: 0.2524 (5.26%)
-    {'epochs': 2000, 'optimizer': 'adam', 'batch_size': 100}
-
-    Adj Close 1day pct_change:
-    Time algo takes: 3828.331 seconds
-    Train error: 0.0300 (2150.61%)
-    Test error: 0.0158 (1914.73%)
-    {'epochs': 2000, 'optimizer': 'rmsprop', 'batch_size': 100}
-    
-    Adj Close 5day pct_change:
-    no activation:
-    Time algo takes: 3761.260 seconds
-    Train error: 0.0609 (893.32%)
-    Test error: 0.0327 (818.15%)
-    {'optimizer': 'adam', 'batch_size': 500, 'epochs': 2000}
-    relu activation: 
-    Time algo takes: 3692.415 seconds
-    Train error: 0.0614 (901.43%)
-    Test error: 0.0321 (804.29%)
-    {'batch_size': 500, 'optimizer': <keras.optimizers.RMSprop object at 0x00000206C9AD86A0>, 'epochs': 2000}
-
-    PCA:
-    Adj Close 1day:
-    Time algo takes: 3551.971 seconds
-    Train error: 0.0313 (1.38%)
-    Test error: 0.1698 (3.54%)
-    {'optimizer': 'adam', 'epochs': 2000, 'batch_size': 500}
-
-
-    Adj Close 1day pct_change cls:
-    Adj Close 5day pct_change cls:
-
-    '''
-    def LSTM_R1(optimizer):
+def LSTM_optimize(Xtrain, Xtest, ytrain, ytest, neurons, batch_size, epochs, repeat): #algorithms = , n_neighbors =
+    #there are a couple of things we can vary:
+    #1. epochs
+    #2. neurons
+    #3. batch_size
+    #4. layers
+    error_train = []
+    error_test = []
+    for i in range(repeat):
         model = Sequential()
-        model.add(LSTM(10, input_shape = (Xtrain.shape[1], Xtrain.shape[2])))
+        model.add(LSTM(neurons, input_shape = (Xtrain.shape[1], Xtrain.shape[2])))
         model.add(Dense(1))
-        model.add(Activation('relu')) #None, 'sigmoid', 'relu', 'softmax'
+        model.compile(loss = 'mean_squared_error', optimizer = 'adam')
+        model.fit(Xtrain, ytrain, epochs = epochs, batch_size = batch_size, verbose=0, shuffle=False)
+        
+        rmse_train = sqrt(mean_squared_error(model.predict(Xtrain, batch_size = batch_size), ytrain))
+        rmse_test = sqrt(mean_squared_error(model.predict(Xtest, batch_size = batch_size), ytest))
+        error_train.append(rmse_train)
+        error_test.append(rmse_test)
+    return error_train, error_test
 
-        model.compile(loss = 'mean_squared_error', optimizer = optimizer)
-        return model
 
-    custom_opt = keras.optimizers.RMSprop(lr = 0.001, rho = 0.9, epsilon = 1e-08, decay = 0.0)
-    
-    params = {'batch_size': [100, 500],
-              'epochs': [1000],
-              'optimizer': [custom_opt, 'rmsprop', 'adam']}
-    
-    print('Keras GridSearchCV: ', strftime('%d %b %Y %H:%M:%S', gmtime()))
-    cv_sets = ShuffleSplit(n_splits = 5, test_size = 0.2, random_state = 0)
-    regressor = KerasRegressor(build_fn = LSTM_R1, verbose = False)
-    t0 = time()
-    grid = GridSearchCV(estimator = regressor, param_grid = params,
-                        scoring = 'neg_mean_squared_error', cv = cv_sets)
 
-    grid = grid.fit(Xtrain, ytrain)
-
-    test_score = rmse(grid.predict(Xval), yval)
-    print('Time algo takes: {:.3f} seconds'.format(time() - t0))
-    print('Train error: {:.4f} ({:.2f}%)'.format(np.sqrt(-grid.best_score_), np.sqrt(-grid.best_score_) / np.mean(ytrain) * 100))
-    print('Test error: {:.4f} ({:.2f}%)'.format(test_score, test_score / np.mean(yval) * 100))
-    
-    #print(grid.best_estimator_)
-    print(grid.best_params_)
-    #print(grid.best_score_)
-    #print(grid.best_index_)
-    #print(grid.cv_results_)
-    pass
 
 ''' my target variables
 0:'Adj Close 1day'
@@ -547,15 +489,26 @@ result['param_max_iter'] = results_dict['param_max_iter'].data
 result['param_alpha'] = results_dict['param_alpha'].data
 result['mean_train_score'] = results_dict['mean_train_score'].data
 result['mean_test_score'] = results_dict['mean_test_score'].data
-print(df_rand_ytrain[variable].mean(), df_rand_ytest[variable].mean())
-result.to_csv('temp.csv')
+
+param_max_iter = result.groupby('param_max_iter').mean()
+param_max_iter['train avg'] = result.groupby('param_max_iter').mean()['mean_train_score']/df_rand_ytrain[variable].mean()
+param_max_iter['test avg'] = result.groupby('param_max_iter').mean()['mean_test_score']/df_rand_ytest[variable].mean()
+
+param_alpha = result.groupby('param_alpha').mean()
+param_alpha['train avg'] = result.groupby('param_alpha').mean()['mean_train_score']/df_rand_ytrain[variable].mean()
+param_alpha['test avg'] = result.groupby('param_alpha').mean()['mean_test_score']/df_rand_ytest[variable].mean()
+
+print('param_max_iter')
+print(param_max_iter)
+print('param_alpha')
+print(param_alpha)
 
 '''
-variable = 'Adj Close 1day pct_change cls'
-results_dict = XGBR_GSCV(PCA_rand_Xtrain,
-                         PCA_rand_Xtest,
-                         PCA_rand_ytrain[variable],
-                         PCA_rand_ytest[variable])
+variable = 'Adj Close 5day pct_change cls'
+results_dict = XGBR_GSCV(df_rand_Xtrain,
+                         df_rand_Xtest,
+                         df_rand_ytrain[variable],
+                         df_rand_ytest[variable])
 
 result = pd.DataFrame()
 
@@ -568,20 +521,9 @@ result['mean_train_score'] = results_dict['mean_train_score'].data
 result['mean_test_score'] = results_dict['mean_test_score'].data
 
 param_learning_rate = result.groupby('param_learning_rate').mean()
-param_learning_rate['train avg'] = result.groupby('param_learning_rate').mean()['mean_train_score']/df_rand_ytrain[variable].mean()
-param_learning_rate['test avg'] = result.groupby('param_learning_rate').mean()['mean_test_score']/df_rand_ytest[variable].mean()
-
 param_max_depth = result.groupby('param_max_depth').mean()
-param_max_depth['train avg'] = result.groupby('param_max_depth').mean()['mean_train_score']/df_rand_ytrain[variable].mean()
-param_max_depth['test avg'] = result.groupby('param_max_depth').mean()['mean_test_score']/df_rand_ytest[variable].mean()
-
 param_n_estimators = result.groupby('param_n_estimators').mean()
-param_n_estimators['train avg'] = result.groupby('param_n_estimators').mean()['mean_train_score']/df_rand_ytrain[variable].mean()
-param_n_estimators['test avg'] = result.groupby('param_n_estimators').mean()['mean_test_score']/df_rand_ytest[variable].mean()
-
 param_reg_alpha = result.groupby('param_reg_alpha').mean()
-param_reg_alpha['train avg'] = result.groupby('param_reg_alpha').mean()['mean_train_score']/df_rand_ytrain[variable].mean()
-param_reg_alpha['test avg'] = result.groupby('param_reg_alpha').mean()['mean_test_score']/df_rand_ytest[variable].mean()
 
 print('param_learning_rate')
 print(param_learning_rate)
@@ -601,9 +543,17 @@ X_test, y_test = window_transform_series(df_Xtest, df_ytest[:, 2], window_size =
 #3656 is the number of rows, 5 is the batch_size/window_size, 10 is the number of features
 
 # NOTE: to use keras's RNN LSTM module our input must be reshaped to [samples, window size, stepsize]
-
-#LSTM_GSCV(X_train, X_test, y_train, y_test)
+#test epochs first
 '''
+train_results = pd.DataFrame()
+test_results = pd.DataFrame()
+epochs = [10, 50, 100, 250, 500, 1000, 2000]
+for e in epochs:
+    train_results[str(e)], test_results[str(e)] = LSTM_optimize(X_train, X_test, y_train, y_test, neurons = 5,
+                                                                batch_size = 5, epochs = e, repeat = 10)
+
+print(train_results)
+
 epoch = 10
 batch_size = 100
 
