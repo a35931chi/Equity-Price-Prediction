@@ -157,14 +157,18 @@ def extract_data(ticker):
     data_yahoo['Adj Close 1day'] = data_yahoo['Adj Close'].shift(-1)
     #2. 5 days future price
     data_yahoo['Adj Close 5day'] = data_yahoo['Adj Close'].shift(-5)
+    #data_yahoo['Adj Close 10day'] = data_yahoo['Adj Close'].shift(-10)
     #3. 1 day future price percentage change
     data_yahoo['Adj Close 1day pct_change'] = data_yahoo['Adj Close 1day'] / data_yahoo['Adj Close'] - 1
     #4. 5 day future price percentage change
     data_yahoo['Adj Close 5day pct_change'] = data_yahoo['Adj Close 5day'] / data_yahoo['Adj Close'] - 1
+    #data_yahoo['Adj Close 10day pct_change'] = data_yahoo['Adj Close 10day'] / data_yahoo['Adj Close'] - 1
     #5. 1 day future price direction
     data_yahoo['Adj Close 1day pct_change cls'] = data_yahoo['Adj Close 1day pct_change'].apply(lambda x: 1 if x >= 0 else 0)
     #6. 5 day future price direction
     data_yahoo['Adj Close 5day pct_change cls'] = data_yahoo['Adj Close 5day pct_change'].apply(lambda x: 1 if x >= 0 else 0)
+    #data_yahoo['Adj Close 10day pct_change cls'] = data_yahoo['Adj Close 10day pct_change'].apply(lambda x: 1 if x >= 0 else 0)
+
     data_yahoo.dropna(axis = 0, how = 'any', inplace = True)
     #print(data_yahoo.head(10))
 

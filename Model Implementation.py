@@ -77,75 +77,6 @@ def rmse(prediction, yval): #this method calculates the metrics
 #1. Lasso Regression
 def Lasso_GSCV(Xtrain, Xval, ytrain, yval):
     '''
-    no PCA:
-    predicting: Adj Close 1day
-    Time algo takes: 26.254 seconds
-    Train error: 0.0216 (0.78%)
-    Test error: 0.0178 (0.65%)
-    Lasso(alpha=0.0001, copy_X=True, fit_intercept=True, max_iter=100.0,
-       normalize=False, positive=False, precompute=False, random_state=None,
-       selection='cyclic', tol=0.0001, warm_start=False)
-
-    predicting: Adj Close 5day
-    Time algo takes: 51.389 seconds
-    Train error: 0.0460 (1.66%)
-    Test error: 0.0417 (1.53%)
-    Lasso(alpha=1e-05, copy_X=True, fit_intercept=True, max_iter=100.0,
-       normalize=False, positive=False, precompute=False, random_state=None,
-       selection='cyclic', tol=0.0001, warm_start=False)
-
-    predicting: Adj Close 1day pct_change
-    Time algo takes: 57.937 seconds
-    Train error: 0.0277 (5294.01%)
-    Test error: 0.0234 (1285.35%)
-    Lasso(alpha=0.001, copy_X=True, fit_intercept=True, max_iter=10.0,
-       normalize=False, positive=False, precompute=False, random_state=None,
-       selection='cyclic', tol=0.0001, warm_start=False)
-
-    predicting: Adj Close 5day pct_change
-    Time algo takes: 55.721 seconds
-    Train error: 0.0568 (983.14%)
-    Test error: 0.0545 (869.17%)
-    Lasso(alpha=1e-05, copy_X=True, fit_intercept=True, max_iter=10.0,
-       normalize=False, positive=False, precompute=False, random_state=None,
-       selection='cyclic', tol=0.0001, warm_start=False)
-
-    PCA:
-    predicting: Adj Close 1day
-    Lasso GridSearchCV:  01 Apr 2018 00:10:49
-    Time algo takes: 0.775 seconds
-    Train error: 0.0218 (0.79%)
-    Test error: 0.0181 (0.66%)
-    Lasso(alpha=1e-05, copy_X=True, fit_intercept=True, max_iter=10.0,
-       normalize=False, positive=False, precompute=False, random_state=None,
-       selection='cyclic', tol=0.0001, warm_start=False)
-
-    predicting: Adj Close 5day
-    Lasso GridSearchCV:  01 Apr 2018 00:10:10
-    Time algo takes: 0.700 seconds
-    Train error: 0.0461 (1.66%)
-    Test error: 0.0419 (1.53%)
-    Lasso(alpha=1e-08, copy_X=True, fit_intercept=True, max_iter=10.0,
-       normalize=False, positive=False, precompute=False, random_state=None,
-       selection='cyclic', tol=0.0001, warm_start=False)
-
-    predicting: Adj Close 1day pct_change
-    Lasso GridSearchCV:  01 Apr 2018 00:13:19
-    Time algo takes: 0.935 seconds
-    Train error: 0.0277 (5294.77%)
-    Test error: 0.0234 (1285.35%)
-    Lasso(alpha=0.001, copy_X=True, fit_intercept=True, max_iter=10.0,
-       normalize=False, positive=False, precompute=False, random_state=None,
-       selection='cyclic', tol=0.0001, warm_start=False)
-
-    predicting: Adj Close 5day pct_change
-    Lasso GridSearchCV:  01 Apr 2018 00:39:01
-    Time algo takes: 0.911 seconds
-    Train error: 0.0568 (982.59%)
-    Test error: 0.0545 (869.70%)
-    Lasso(alpha=1e-10, copy_X=True, fit_intercept=True, max_iter=10.0,
-       normalize=False, positive=False, precompute=False, random_state=None,
-       selection='cyclic', tol=0.0001, warm_start=False)
 
     '''
     print('Lasso GridSearchCV: ', strftime('%d %b %Y %H:%M:%S', gmtime()))
@@ -170,6 +101,25 @@ def Lasso_GSCV(Xtrain, Xval, ytrain, yval):
     print(grid.cv_results_)
     return grid.cv_results_
 
+def Lasso_optimize(Xtrain, Xval, ytrain, yval):
+    '''
+
+    '''
+    print('Lasso GridSearchCV: ', strftime('%d %b %Y %H:%M:%S', gmtime()))
+
+    t0 = time()
+
+    regressor = Lasso(alpha = 0.0001, max_iter = 1000)
+    regressor.fit(Xtrain, ytrain)
+
+    train_score = rmse(regressor.predict(Xtrain), ytrain)
+    test_score = rmse(regressor.predict(Xval), yval)
+    print('Time algo takes: {:.3f} seconds'.format(time() - t0))
+    print('Train error: {:.4f} ({:.2f}%)'.format(train_score, train_score / np.mean(ytrain) * 100))
+    print('Test error: {:.4f} ({:.2f}%)'.format(test_score, test_score / np.mean(yval) * 100))
+    
+    pass
+
 def XGBR_GSCV(Xtrain, Xval, ytrain, yval):
     '''
     params = {'reg_alpha': [0.00001, 0.000025, 0.00005,0.000075,
@@ -179,47 +129,7 @@ def XGBR_GSCV(Xtrain, Xval, ytrain, yval):
               'learning_rate': [0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.045, 0.05, 0.055, 0.06, 0.065,
                                 0.07, 0.075, 0.08, 0.085, 0.09, 0.1],
               'max_depth': range(1, 10)}
-    no PCA:
-    Adj Close 1day pct_change cls:
-    Time algo takes: 1415.932 seconds
-    Train accuracy: 0.5273
-    Test accuracy: 0.7008
-    XGBClassifier(base_score=0.5, colsample_bylevel=1, colsample_bytree=1,
-           gamma=0, learning_rate=0.1, max_delta_step=0, max_depth=6,
-           min_child_weight=1, missing=None, n_estimators=800, nthread=-1,
-           objective='binary:logistic', reg_alpha=7.5e-06, reg_lambda=1,
-           scale_pos_weight=1, seed=0, silent=True, subsample=1)
-
-    Adj Close 5day pct_change cls:
-    Time algo takes: 2725.627 seconds
-    Train accuracy: 0.5884
-    Test accuracy: 0.6301
-    XGBClassifier(base_score=0.5, colsample_bylevel=1, colsample_bytree=1,
-           gamma=0, learning_rate=0.025, max_delta_step=0, max_depth=6,
-           min_child_weight=1, missing=None, n_estimators=800, nthread=-1,
-           objective='binary:logistic', reg_alpha=1e-05, reg_lambda=1,
-           scale_pos_weight=1, seed=0, silent=True, subsample=1)
-    
-    PCA:
-    Adj Close 1day pct_change cls:
-    Time algo takes: 1102.951 seconds
-    Train accuracy: 0.5215
-    Test accuracy: 0.6669
-    XGBClassifier(base_score=0.5, colsample_bylevel=1, colsample_bytree=1,
-           gamma=0, learning_rate=0.1, max_delta_step=0, max_depth=3,
-           min_child_weight=1, missing=None, n_estimators=1100, nthread=-1,
-           objective='binary:logistic', reg_alpha=0.01, reg_lambda=1,
-           scale_pos_weight=1, seed=0, silent=True, subsample=1)
-
-    Adj Close 5day pct_change cls:
-    Time algo takes: 1105.034 seconds
-    Train accuracy: 0.5638
-    Test accuracy: 0.6535
-    XGBClassifier(base_score=0.5, colsample_bylevel=1, colsample_bytree=1,
-           gamma=0, learning_rate=0.01, max_delta_step=0, max_depth=2,
-           min_child_weight=1, missing=None, n_estimators=800, nthread=-1,
-           objective='binary:logistic', reg_alpha=0.1, reg_lambda=1,
-           scale_pos_weight=1, seed=0, silent=True, subsample=1)    
+  
     '''
     print('XGBoost GridSearchCV: ', strftime('%d %b %Y %H:%M:%S', gmtime()))
     params = {'learning_rate': [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1],
@@ -245,178 +155,29 @@ def XGBR_GSCV(Xtrain, Xval, ytrain, yval):
     print(grid.cv_results_)
     return grid.cv_results_
 
-def Lasso_Robust(Xtrain, Xval, ytrain, yval):
+def XGBR_optimize(Xtrain, Xval, ytrain, yval):
     '''
-    Best Model:
-    Lasso(alpha=0.0006, copy_X=True, fit_intercept=True, max_iter=100,
-       normalize=False, positive=False, precompute=False, random_state=None,
-       selection='cyclic', tol=0.0001, warm_start=False)
+    params = {'reg_alpha': [0.00001, 0.000025, 0.00005,0.000075,
+                        0.0001, 0.0002, 0.0003, 0.0004, 0.0005, 0.0006, 0.0007,
+                        0.0008, 0.0009, 0.001, 0.0025, 0.005],
+              'n_estimators': range(1500, 5000, 100),
+              'learning_rate': [0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.045, 0.05, 0.055, 0.06, 0.065,
+                                0.07, 0.075, 0.08, 0.085, 0.09, 0.1],
+              'max_depth': range(1, 10)}
+  
     '''
-    num_cols = ['Dimension 1', 'Dimension 2', 'Dimension 3', 'Dimension 4',
-                'Dimension 5', 'Dimension 6', 'Dimension 7']
-    Xtrain.reset_index(inplace = True)
-    Xval.reset_index(inplace = True)
-    Xtrain.drop(['index'], axis = 1, inplace = True)
-    Xval.drop(['index'], axis = 1, inplace = True)
+    print('XGBoost GridSearchCV: ', strftime('%d %b %Y %H:%M:%S', gmtime()))
+    t0 = time()
+    clfier = xgb.XGBClassifier(learning_rate = 0.001, max_depth = 5, n_estimators = 1000,
+                               reg_alpha = 0.001)
+    clfier.fit(Xtrain, ytrain)
     
-    ytrain.reset_index(drop = True, inplace = True)
-    yval.reset_index(drop = True, inplace = True)
+    print('Time algo takes: {:.3f} seconds'.format(time() - t0))
+    print('Train accuracy: {:.4f}'.format(accuracy_score(clfier.predict(Xtrain), ytrain)))
+    print('Test accuracy: {:.4f}'.format(accuracy_score(clfier.predict(Xval), yval)))
     
-    n_folds = 10
-    
-    if True: #try different folds
-        regressor = make_pipeline(RobustScaler(), Lasso(alpha = 0.0006, max_iter = 100))
-        kf = KFold(n_folds, shuffle = True)
-        rmse = np.sqrt(-cross_val_score(regressor, Xtrain.values, ytrain, scoring = 'neg_mean_squared_error', cv = kf))
-        plt.plot(rmse)
-        plt.xlabel('Kth Fold')
-        plt.ylabel('RMSE')
-        plt.title('Kth Fold vs. RMSE')
-        plt.axhline(np.mean(rmse), linestyle = ':', color = 'r', label = 'mean RMSE')
-        plt.legend()
-        plt.tight_layout()
-        #plt.savefig('RMSE for each KFold.png')
-        plt.show()
-        
-    if True: #try different random states
-        mean = []
-        std = []
-        for i in range(20):
-            regressor = make_pipeline(RobustScaler(), Lasso(alpha = 0.0006, max_iter = 100))
-            kf = KFold(n_folds, shuffle = True)
-            rmse = np.sqrt(-cross_val_score(regressor, Xtrain.values, ytrain, scoring = 'neg_mean_squared_error', cv = kf))
-            mean.append(np.mean(rmse))
-            std.append(np.std(rmse))
-        fig, (ax1, ax2) = plt.subplots(ncols = 2, figsize = (10, 5))
-        ax1.plot(mean)
-        ax1.axhline(np.mean(mean), linestyle = ':', color = 'r')
-        ax1.set_xlabel('#th iteration')
-        ax1.set_ylabel('mean RMSE')
-        ax1.set_title('20 K-Fold results: mean RMSE')
-        ax2.plot(std)
-        ax2.axhline(np.mean(std), linestyle = ':', color = 'r')
-        ax2.set_xlabel('#th iteration')
-        ax2.set_ylabel('std RMSE')
-        ax2.set_title('20 K-Fold results: std RMSE')
-        plt.tight_layout()
-        plt.savefig('avg RMSE for diff random state.png')
-        plt.show()
-
-    #try small changes to the dataset
-    if False: 
-        #deletion observations points
-        yidx = Xtrain.shape[0]
-        error = []
-        fracs = [0.00, 0.01, 0.02, 0.03, 0.04, 0.05, 0.1, 0.15, 0.2]
-
-        for frac in fracs: 
-            Xtrain_copy = pd.DataFrame.copy(Xtrain)
-            ytrain_copy = pd.DataFrame.copy(ytrain)
-            cidx = np.random.choice(yidx, round(0.05 * yidx))
-            Xtrain_copy.drop(Xtrain_copy.index[cidx], inplace = True)
-            ytrain_copy.drop(ytrain_copy.index[cidx], inplace = True)
-
-            scaler = RobustScaler()
-            Xtrainscaled = scaler.fit_transform(Xtrain_copy)
-            Xvalscaled = scaler.transform(Xval)
-
-            regressor = Lasso(alpha = 0.0006, copy_X = True, fit_intercept = True,
-                              max_iter = 100, normalize = False, positive = False,
-                              precompute = False, random_state = None, selection = 'cyclic',
-                              tol = 0.0001, warm_start = False)
-    
-            regressor.fit(Xtrainscaled, ytrain_copy)
-            test_score = np.sqrt(mean_squared_error(regressor.predict(Xvalscaled), yval))
-            error.append(test_score)
-
-            print('{:.0f}% data deleted, Test error: {:.4f} ({:.2f}%)'.format(frac * 100, test_score, test_score / np.mean(yval) * 100))
-        plt.plot(fracs, error)
-        plt.annotate('{:.4f}, {:.2f}% of target'.format(test_score, test_score / np.mean(yval) * 100),
-                xy=(frac, test_score), xytext=(30, -20),
-                textcoords='offset points', ha='right', va='bottom',
-                bbox=dict(boxstyle='round,pad=0.5', fc='yellow', alpha=0.5),
-                arrowprops=dict(arrowstyle = '->', connectionstyle='arc3,rad=0'))
-        #plt.ylim(ymin = 0)
-        plt.axhline(0.1017, linestyle = ':', color = 'r', label = 'benchmark')
-        plt.title('Test RMSE vs. % data removed')
-        plt.xlabel('% data removed')
-        plt.ylabel('Test RMSE')
-        plt.legend()
-        plt.tight_layout()
-        plt.savefig('test RMSE vs % data removed.png')
-        plt.show()
-        
-    if False:
-        #select some observations and mutiply some points by 10
-        yidx = Xtrain.shape[0]
-        error_m = []
-        error_d = []
-        fracs = [0.00, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.15, 0.2]
-
-        for frac in fracs: 
-            Xtrain_copy = pd.DataFrame.copy(Xtrain)
-
-            cidx = np.random.choice(yidx, round(frac * yidx))
-            Xtrain_copy.ix[cidx , num_cols] = Xtrain_copy.ix[cidx , num_cols] * 10
-            
-            scaler = RobustScaler()
-            Xtrainscaled = scaler.fit_transform(Xtrain_copy)
-            Xvalscaled = scaler.transform(Xval)
-
-            regressor = Lasso(alpha = 0.0006, copy_X = True, fit_intercept = True,
-                              max_iter = 100, normalize = False, positive = False,
-                              precompute = False, random_state = None, selection = 'cyclic',
-                              tol = 0.0001, warm_start = False)
-    
-            regressor.fit(Xtrainscaled, ytrain)
-            test_scorem = np.sqrt(mean_squared_error(regressor.predict(Xvalscaled), yval))
-            error_m.append(test_scorem)
-            print('{:.0f}% data scaled up, Test error: {:.4f} ({:.2f}%)'.format(frac * 100, test_scorem, test_scorem / np.mean(yval) * 100))
-
-        for frac in fracs: 
-            Xtrain_copy = pd.DataFrame.copy(Xtrain)
-
-            cidx = np.random.choice(yidx, round(frac * yidx))
-            Xtrain_copy.ix[cidx , num_cols] = Xtrain_copy.ix[cidx , num_cols] / 10
-            
-            scaler = RobustScaler()
-            Xtrainscaled = scaler.fit_transform(Xtrain_copy)
-            Xvalscaled = scaler.transform(Xval)
-
-            regressor = Lasso(alpha = 0.0006, copy_X = True, fit_intercept = True,
-                              max_iter = 100, normalize = False, positive = False,
-                              precompute = False, random_state = None, selection = 'cyclic',
-                              tol = 0.0001, warm_start = False)
-    
-            regressor.fit(Xtrainscaled, ytrain)
-            test_scored = np.sqrt(mean_squared_error(regressor.predict(Xvalscaled), yval))
-            error_d.append(test_scored)
-            print('{:.0f}% data scaled up, Test error: {:.4f} ({:.2f}%)'.format(frac * 100, test_scored, test_scored / np.mean(yval) * 100))
-            
-        plt.plot(fracs, error_m, label = 'some data scaled up')
-        plt.plot(fracs, error_d, label = 'some data scaled down')
-        plt.annotate('{:.4f}, {:.2f}% of target'.format(test_scorem, test_scorem / np.mean(yval) * 100),
-                xy=(frac, test_scorem), xytext=(30, -20),
-                textcoords='offset points', ha='right', va='bottom',
-                bbox=dict(boxstyle='round,pad=0.5', fc='yellow', alpha=0.5),
-                arrowprops=dict(arrowstyle = '->', connectionstyle='arc3,rad=0'))
-        plt.annotate('{:.4f}, {:.2f}% of target'.format(test_scored, test_scored / np.mean(yval) * 100),
-                xy=(frac, test_scored), xytext=(30, -20),
-                textcoords='offset points', ha='right', va='bottom',
-                bbox=dict(boxstyle='round,pad=0.5', fc='yellow', alpha=0.5),
-                arrowprops=dict(arrowstyle = '->', connectionstyle='arc3,rad=0'))
-        
-        #plt.ylim(ymin = 0)
-        plt.axhline(0.1017, linestyle = ':', color = 'r', label = 'benchmark')
-        plt.title('Test RMSE vs. % data altered')
-        plt.xlabel('% data altered')
-        plt.ylabel('Test RMSE')
-        plt.legend()
-        plt.tight_layout()
-        plt.savefig('test RMSE vs % data scaled.png')
-        plt.show()
-
     pass
+
 
 def window_transform_series(X, y, window_size):
     # containers for input/output pairs
@@ -457,14 +218,11 @@ def LSTM_optimize(Xtrain, Xtest, ytrain, ytest, neurons, batch_size, epochs, rep
         model.compile(loss = 'mean_squared_error', optimizer = 'adam')
         model.fit(Xtrain, ytrain, epochs = epochs, batch_size = batch_size, verbose=0, shuffle=False)
         
-        rmse_train = sqrt(mean_squared_error(model.predict(Xtrain, batch_size = batch_size), ytrain))
-        rmse_test = sqrt(mean_squared_error(model.predict(Xtest, batch_size = batch_size), ytest))
+        rmse_train = np.sqrt(mean_squared_error(model.predict(Xtrain, batch_size = batch_size), ytrain))
+        rmse_test = np.sqrt(mean_squared_error(model.predict(Xtest, batch_size = batch_size), ytest))
         error_train.append(rmse_train)
         error_test.append(rmse_test)
     return error_train, error_test
-
-
-
 
 ''' my target variables
 0:'Adj Close 1day'
@@ -476,100 +234,120 @@ def LSTM_optimize(Xtrain, Xtest, ytrain, ytest, neurons, batch_size, epochs, rep
 '''
 
 #benchmark models: get a rough idea on what type of error/accuracy we can achieve
-'''
-variable = 'Adj Close 5day pct_change'
-results_dict = Lasso_GSCV(PCA_rand_Xtrain,
-                          PCA_rand_Xtest,
-                          PCA_rand_ytrain[variable],
-                          PCA_rand_ytest[variable])
+if False: #Lasso Regression: run grid search cross validation to find the best parameters 
+    variable = 'Adj Close 5day pct_change'
+    results_dict = Lasso_GSCV(PCA_rand_Xtrain,
+                              PCA_rand_Xtest,
+                              PCA_rand_ytrain[variable],
+                              PCA_rand_ytest[variable])
 
 
-result = pd.DataFrame()
-result['param_max_iter'] = results_dict['param_max_iter'].data
-result['param_alpha'] = results_dict['param_alpha'].data
-result['mean_train_score'] = results_dict['mean_train_score'].data
-result['mean_test_score'] = results_dict['mean_test_score'].data
+    result = pd.DataFrame()
+    result['param_max_iter'] = results_dict['param_max_iter'].data
+    result['param_alpha'] = results_dict['param_alpha'].data
+    result['mean_train_score'] = results_dict['mean_train_score'].data
+    result['mean_test_score'] = results_dict['mean_test_score'].data
 
-param_max_iter = result.groupby('param_max_iter').mean()
-param_max_iter['train avg'] = result.groupby('param_max_iter').mean()['mean_train_score']/df_rand_ytrain[variable].mean()
-param_max_iter['test avg'] = result.groupby('param_max_iter').mean()['mean_test_score']/df_rand_ytest[variable].mean()
+    param_max_iter = result.groupby('param_max_iter').mean()
+    param_max_iter['train avg'] = result.groupby('param_max_iter').mean()['mean_train_score']/df_rand_ytrain[variable].mean()
+    param_max_iter['test avg'] = result.groupby('param_max_iter').mean()['mean_test_score']/df_rand_ytest[variable].mean()
 
-param_alpha = result.groupby('param_alpha').mean()
-param_alpha['train avg'] = result.groupby('param_alpha').mean()['mean_train_score']/df_rand_ytrain[variable].mean()
-param_alpha['test avg'] = result.groupby('param_alpha').mean()['mean_test_score']/df_rand_ytest[variable].mean()
+    param_alpha = result.groupby('param_alpha').mean()
+    param_alpha['train avg'] = result.groupby('param_alpha').mean()['mean_train_score']/df_rand_ytrain[variable].mean()
+    param_alpha['test avg'] = result.groupby('param_alpha').mean()['mean_test_score']/df_rand_ytest[variable].mean()
 
-print('param_max_iter')
-print(param_max_iter)
-print('param_alpha')
-print(param_alpha)
+    print('param_max_iter')
+    print(param_max_iter)
+    print('param_alpha')
+    print(param_alpha)
 
-'''
-variable = 'Adj Close 5day pct_change cls'
-results_dict = XGBR_GSCV(df_rand_Xtrain,
-                         df_rand_Xtest,
-                         df_rand_ytrain[variable],
-                         df_rand_ytest[variable])
+if False: #Get the best possible results from Lasso Regression
+    variable = 'Adj Close 5day pct_change'
+    Lasso_optimize(PCA_rand_Xtrain,
+                   PCA_rand_Xtest,
+                   PCA_rand_ytrain[variable],
+                   PCA_rand_ytest[variable])
 
-result = pd.DataFrame()
+    #no PCA
+    #'Adj Close 1day': achieving Train error: 0.0206 (0.74%), Test error: 0.0195 (0.72%)
+    #'Adj Close 5day': achieving Train error: 0.0444 (1.59%), Test error: 0.0477 (1.73%)
+    #'Adj Close 1day pct_change': achieving Train error: 0.0246 (1640.96%), Test error: 0.0311 (6591.40%)
+    #'Adj Close 5day pct_change': achieving Train error: 0.0572 (894.90%), Test error: 0.0528 (816.17%)
 
-result['param_learning_rate'] = results_dict['param_learning_rate'].data
-result['param_max_depth'] = results_dict['param_max_depth'].data
-result['param_n_estimators'] = results_dict['param_n_estimators'].data
-result['param_reg_alpha'] = results_dict['param_reg_alpha'].data
+    #with PCA
+    #'Adj Close 1day': achieving Train error: 0.0197 (0.71%), Test error: 0.0250 (0.88%)
+    #'Adj Close 5day': achieving Train error: 0.0448 (1.60%), Test error: 0.0469 (1.75%)
+    #'Adj Close 1day pct_change': achieving Train error: 0.0263 (2113.21%), Test error: 0.0247 (1672.30%)
+    #'Adj Close 5day pct_change': achieving Train error: 0.0578 (840.08%), Test error: 0.0500 (1109.72%)
 
-result['mean_train_score'] = results_dict['mean_train_score'].data
-result['mean_test_score'] = results_dict['mean_test_score'].data
 
-param_learning_rate = result.groupby('param_learning_rate').mean()
-param_max_depth = result.groupby('param_max_depth').mean()
-param_n_estimators = result.groupby('param_n_estimators').mean()
-param_reg_alpha = result.groupby('param_reg_alpha').mean()
+if False: #XGBoost Classification: run grid search cross validation to find the best parameters 
+    variable = 'Adj Close 5day pct_change cls'
+    results_dict = XGBR_GSCV(PCA_rand_Xtrain,
+                             PCA_rand_Xtest,
+                             PCA_rand_ytrain[variable],
+                             PCA_rand_ytest[variable])
 
-print('param_learning_rate')
-print(param_learning_rate)
-print('param_max_depth')
-print(param_max_depth)
-print('param_n_estimators')
-print(param_n_estimators)
-print('param_reg_alpha')
-print(param_reg_alpha)
+    result = pd.DataFrame()
+
+    result['param_learning_rate'] = results_dict['param_learning_rate'].data
+    result['param_max_depth'] = results_dict['param_max_depth'].data
+    result['param_n_estimators'] = results_dict['param_n_estimators'].data
+    result['param_reg_alpha'] = results_dict['param_reg_alpha'].data
+
+    result['mean_train_score'] = results_dict['mean_train_score'].data
+    result['mean_test_score'] = results_dict['mean_test_score'].data
+
+    param_learning_rate = result.groupby('param_learning_rate').mean()
+    param_max_depth = result.groupby('param_max_depth').mean()
+    param_n_estimators = result.groupby('param_n_estimators').mean()
+    param_reg_alpha = result.groupby('param_reg_alpha').mean()
+
+    print('param_learning_rate')
+    print(param_learning_rate)
+    print('param_max_depth')
+    print(param_max_depth)
+    print('param_n_estimators')
+    print(param_n_estimators)
+    print('param_reg_alpha')
+    print(param_reg_alpha)
+
+if False: #Get the best possible results from XGBoost Classifier
+    variable = 'Adj Close 1day pct_change cls'
+    XGBR_optimize(df_rand_Xtrain,
+                  df_rand_Xtest,
+                  df_rand_ytrain[variable],
+                  df_rand_ytest[variable])
+
+    #no PCA
+    #'Adj Close 1day pct_change cls': achieving Train accuracy: 0.5990, Test accuracy: 0.5011
+    #'Adj Close 5day pct_change cls': achieving Train accuracy: 0.6457, Test accuracy: 0.5884
+
+    #with PCA
+    #'Adj Close 1day pct_change cls': achieving Train accuracy: 0.6476, Test accuracy: 0.5338
+    #'Adj Close 5day pct_change cls': achieving Train accuracy: 0.6591, Test accuracy: 0.5611
 
 #LSTM
-window_size = 5
-X_train, y_train = window_transform_series(df_Xtrain, df_ytrain[:, 2], window_size = window_size)
-X_test, y_test = window_transform_series(df_Xtest, df_ytest[:, 2], window_size = window_size)
+if True:
+    window_size = 5
+    X_train, y_train = window_transform_series(df_Xtrain, df_ytrain[:, 2], window_size = window_size)
+    X_test, y_test = window_transform_series(df_Xtest, df_ytest[:, 2], window_size = window_size)
 
-# X_train.shape: (3656, 5, 10) and y_train.shape: (3656, 1)
-#3656 is the number of rows, 5 is the batch_size/window_size, 10 is the number of features
+    # X_train.shape: (3656, 5, 10) and y_train.shape: (3656, 1)
+    #3656 is the number of rows, 5 is the batch_size/window_size, 10 is the number of features
 
-# NOTE: to use keras's RNN LSTM module our input must be reshaped to [samples, window size, stepsize]
-#test epochs first
-'''
-train_results = pd.DataFrame()
-test_results = pd.DataFrame()
-epochs = [10, 50, 100, 250, 500, 1000, 2000]
-for e in epochs:
-    train_results[str(e)], test_results[str(e)] = LSTM_optimize(X_train, X_test, y_train, y_test, neurons = 5,
-                                                                batch_size = 5, epochs = e, repeat = 10)
+    # NOTE: to use keras's RNN LSTM module our input must be reshaped to [samples, window size, stepsize]
+    #test epochs first
 
-print(train_results)
+    train_results = pd.DataFrame()
+    test_results = pd.DataFrame()
+    epochs = [10, 50, 100, 250, 500, 1000, 2000]
+    for e in epochs:
+        train_results[str(e)], test_results[str(e)] = LSTM_optimize(X_train, X_test, y_train, y_test,
+                                                                    neurons = 5, batch_size = 5,
+                                                                    epochs = e, repeat = 10)
+        print('finished with ', e)
 
-epoch = 10
-batch_size = 100
+    print(train_results)
 
-model = Sequential()
-
-model.add(LSTM(7, input_shape = (X_train.shape[1], X_train.shape[2])))
-
-model.add(Dense(1))
-
-optimizer = keras.optimizers.RMSprop(lr = 0.001, rho = 0.9, epsilon = 1e-08, decay = 0.0)
-model.compile(loss = 'mean_squared_error', optimizer = optimizer)
-
-t0 = time()
-model.fit(X_train, y_train, epochs = epoch, batch_size = batch_size, verbose = 0)
-
-training_error = model.evaluate(X_train, y_train, verbose=0)
-testing_error = model.evaluate(X_test, y_test, verbose=0)
-
-'''
+    
