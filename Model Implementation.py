@@ -339,15 +339,25 @@ if True:
     # NOTE: to use keras's RNN LSTM module our input must be reshaped to [samples, window size, stepsize]
     #test epochs first
 
-    train_results = pd.DataFrame()
-    test_results = pd.DataFrame()
-    epochs = [10, 50, 100, 250, 500, 1000, 2000]
-    for e in epochs:
-        train_results[str(e)], test_results[str(e)] = LSTM_optimize(X_train, X_test, y_train, y_test,
-                                                                    neurons = 5, batch_size = 5,
-                                                                    epochs = e, repeat = 10)
-        print('finished with ', e)
+    train_result = pd.DataFrame()
+    test_result = pd.DataFrame()
+    neurons = [5, 10, 15, 20]
+    epochs = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500]
+    train_results = dict()
+    test_results = dict()
 
+    for n in neurons:
+        for e in epochs:
+            t0 = time()
+            train_result[str(e)], test_result[str(e)] = LSTM_optimize(X_train, X_test, y_train, y_test,
+                                                                      neurons = n, batch_size = 5,
+                                                                      epochs = e, repeat = 3)
+            print('{} neurons finished with {} epochs, took {} seconds'.format(n, e, time() - t0))
+            train_results[str(n) + '-' + str(e)] = train_result[str(e)]
+            test_results[str(n) + '-' + str(e)] = test_result[str(e)]
+            
+        
     print(train_results)
+    print(test_results)
 
     
