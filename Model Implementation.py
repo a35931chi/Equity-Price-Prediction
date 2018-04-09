@@ -341,20 +341,22 @@ if True:
 
     train_result = pd.DataFrame()
     test_result = pd.DataFrame()
-    neurons = [5, 10, 15, 20]
-    epochs = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500]
+    neurons = [5, 10]
+    epochs = [150]
+    batch_size = [5, 50, 100, 250, 500]
     train_results = dict()
     test_results = dict()
 
     for n in neurons:
         for e in epochs:
-            t0 = time()
-            train_result[str(e)], test_result[str(e)] = LSTM_optimize(X_train, X_test, y_train, y_test,
-                                                                      neurons = n, batch_size = 5,
-                                                                      epochs = e, repeat = 3)
-            print('{} neurons finished with {} epochs, took {} seconds'.format(n, e, time() - t0))
-            train_results[str(n) + '-' + str(e)] = train_result[str(e)]
-            test_results[str(n) + '-' + str(e)] = test_result[str(e)]
+            for b in batch_size:
+                t0 = time()
+                train_result[str(e)], test_result[str(e)] = LSTM_optimize(X_train, X_test, y_train, y_test,
+                                                                          neurons = n, batch_size = 5,
+                                                                          epochs = e, repeat = 3)
+                print('{} neurons {} batches, finished with {} epochs, took {} seconds'.format(n, b, e, time() - t0))
+                train_results[str(n) + '-' + str(e) + '-' + str(b)] = train_result[str(e)]
+                test_results[str(n) + '-' + str(e) + '-' + str(b)] = test_result[str(e)]
             
         
     print(train_results)
