@@ -203,20 +203,61 @@ def window_transform_series(X, y, window_size):
 
 #is it a good idea to tune LSTM using gridsearchCV??
 #https://machinelearningmastery.com/tune-lstm-hyperparameters-keras-time-series-forecasting/
-def LSTM_optimize(Xtrain, Xtest, ytrain, ytest, neurons, batch_size, epochs, repeat): #algorithms = , n_neighbors =
+def LSTM_optimize1(Xtrain, Xtest, ytrain, ytest, neurons, batch_size, epochs, repeat): #algorithms = , n_neighbors =
     #there are a couple of things we can vary:
-    #1. epochs
-    #2. neurons
-    #3. batch_size
-    #4. layers
+    #1. epochs: seem that 150 works best
+    #2. neurons: doesn't seem like it matters for single layer
+    #3. batch_size: doesn't seem like it matters for single layer
     error_train = []
     error_test = []
+    good_size = Xtrain.shape[0] - Xtrain.shape[0] % batch_size
+    Xtrain = Xtrain[-good_size:]
+    ytrain = ytrain[-good_size:]
+    
+    good_size = Xtest.shape[0] - Xtest.shape[0] % batch_size
+    Xtest = Xtest[-good_size:]
+    ytest = ytest[-good_size:]
+    
     for i in range(repeat):
         model = Sequential()
-        model.add(LSTM(neurons, input_shape = (Xtrain.shape[1], Xtrain.shape[2])))
+        model.add(LSTM(neurons, batch_input_shape = (batch_size, Xtrain.shape[1], Xtrain.shape[2]), stateful = True))
         model.add(Dense(1))
         model.compile(loss = 'mean_squared_error', optimizer = 'adam')
-        model.fit(Xtrain, ytrain, epochs = epochs, batch_size = batch_size, verbose=0, shuffle=False)
+        model.fit(Xtrain, ytrain, epochs = epochs, batch_size = batch_size, verbose = 0, shuffle = False)
+        
+        rmse_train = np.sqrt(mean_squared_error(model.predict(Xtrain, batch_size = batch_size), ytrain))
+        rmse_test = np.sqrt(mean_squared_error(model.predict(Xtest, batch_size = batch_size), ytest))
+        error_train.append(rmse_train)
+        error_test.append(rmse_test)
+        model.reset_states()
+    return error_train, error_test
+
+#another reference: https://machinelearningmastery.com/stacked-long-short-term-memory-networks/
+def LSTM_optimize2(Xtrain, Xtest, ytrain, ytest, neurons1, neurons2,
+                   batch_size, epochs, repeat): #algorithms = , n_neighbors =
+    #there are a couple of things we can vary:
+    #1. epochs: 
+    #2. neurons: 
+    #3. batch_size: 
+    #4. layers:
+    error_train = []
+    error_test = []
+    good_size = Xtrain.shape[0] - Xtrain.shape[0] % batch_size
+    Xtrain = Xtrain[-good_size:]
+    ytrain = ytrain[-good_size:]
+    
+    good_size = Xtest.shape[0] - Xtest.shape[0] % batch_size
+    Xtest = Xtest[-good_size:]
+    ytest = ytest[-good_size:]
+    
+    for i in range(repeat):
+        model = Sequential()
+        model.add(LSTM(neurons1, batch_input_shape = (batch_size, Xtrain.shape[1], Xtrain.shape[2]),
+                       stateful = True, return_sequences = True))
+        model.add(LSTM(neurons2))
+        model.add(Dense(1))
+        model.compile(loss = 'mean_squared_error', optimizer = 'adam')
+        model.fit(Xtrain, ytrain, epochs = epochs, batch_size = batch_size, verbose = 0, shuffle = False)
         
         rmse_train = np.sqrt(mean_squared_error(model.predict(Xtrain, batch_size = batch_size), ytrain))
         rmse_test = np.sqrt(mean_squared_error(model.predict(Xtest, batch_size = batch_size), ytest))
@@ -342,19 +383,19 @@ if True:
 
     train_result = pd.DataFrame()
     test_result = pd.DataFrame()
-    neurons = [5, 10]
-    epochs = [150]
+    neurons1 = [5, 10, 15, 20]
+    epochs = [50, 150, 250]
     batch_size = [5, 50, 100, 250, 500]
     train_results = dict()
     test_results = dict()
 
-    for n in neurons:
+    for n in neurons1:
         for e in epochs:
             for b in batch_size:
                 t0 = time()
-                train_result[str(e)], test_result[str(e)] = LSTM_optimize(X_train, X_test, y_train, y_test,
-                                                                          neurons = n, batch_size = b,
-                                                                          epochs = e, repeat = 1)
+                train_result[str(e)], test_result[str(e)] = LSTM_optimize2(X_train, X_test, y_train, y_test,
+                                                                           neurons1 = n, neurons2 = n,
+                                                                           batch_size = b, epochs = e, repeat = 1)
                 print('{} neurons {} batches, finished with {} epochs, took {} seconds'.format(n, b, e, time() - t0))
                 train_results[str(n) + '-' + str(e) + '-' + str(b)] = train_result[str(e)]
                 test_results[str(n) + '-' + str(e) + '-' + str(b)] = test_result[str(e)]
