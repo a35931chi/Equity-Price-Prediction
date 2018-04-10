@@ -222,6 +222,7 @@ def LSTM_optimize(Xtrain, Xtest, ytrain, ytest, neurons, batch_size, epochs, rep
         rmse_test = np.sqrt(mean_squared_error(model.predict(Xtest, batch_size = batch_size), ytest))
         error_train.append(rmse_train)
         error_test.append(rmse_test)
+        model.reset_states()
     return error_train, error_test
 
 ''' my target variables
@@ -352,14 +353,19 @@ if True:
             for b in batch_size:
                 t0 = time()
                 train_result[str(e)], test_result[str(e)] = LSTM_optimize(X_train, X_test, y_train, y_test,
-                                                                          neurons = n, batch_size = 5,
-                                                                          epochs = e, repeat = 3)
+                                                                          neurons = n, batch_size = b,
+                                                                          epochs = e, repeat = 1)
                 print('{} neurons {} batches, finished with {} epochs, took {} seconds'.format(n, b, e, time() - t0))
                 train_results[str(n) + '-' + str(e) + '-' + str(b)] = train_result[str(e)]
                 test_results[str(n) + '-' + str(e) + '-' + str(b)] = test_result[str(e)]
             
         
-    print(train_results)
-    print(test_results)
-
-    
+    print('train errors')
+    for key in train_results.keys():
+        print(key)
+        print(train_results[key])
+        
+    print('test errors')
+    for key in test_results.keys():
+        print(key)
+        print(test_results[key])
