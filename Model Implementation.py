@@ -381,24 +381,27 @@ if True:
     # NOTE: to use keras's RNN LSTM module our input must be reshaped to [samples, window size, stepsize]
     #test epochs first
 
-    train_result = pd.DataFrame()
-    test_result = pd.DataFrame()
-    neurons1 = [5, 10, 15, 20]
-    epochs = [50, 150, 250]
-    batch_size = [5, 50, 100, 250, 500]
+    
+    neurons1 = [5, 10, 15]
+    neurons2 = [5, 10, 15]
+    epochs = [200, 300, 400]
+    batch_size = [400, 500, 600]
     train_results = dict()
     test_results = dict()
 
-    for n in neurons1:
-        for e in epochs:
-            for b in batch_size:
-                t0 = time()
-                train_result[str(e)], test_result[str(e)] = LSTM_optimize2(X_train, X_test, y_train, y_test,
-                                                                           neurons1 = n, neurons2 = n,
-                                                                           batch_size = b, epochs = e, repeat = 1)
-                print('{} neurons {} batches, finished with {} epochs, took {} seconds'.format(n, b, e, time() - t0))
-                train_results[str(n) + '-' + str(e) + '-' + str(b)] = train_result[str(e)]
-                test_results[str(n) + '-' + str(e) + '-' + str(b)] = test_result[str(e)]
+    for n1 in neurons1:
+        for n2 in neurons2:
+            for e in epochs:
+                for b in batch_size:
+                    t0 = time()
+                    train_result = pd.DataFrame()
+                    test_result = pd.DataFrame()
+                    train_result, test_result = LSTM_optimize2(X_train, X_test, y_train, y_test,
+                                                               neurons1 = n1, neurons2 = n2,
+                                                               batch_size = b, epochs = e, repeat = 1)
+                    print('layer1 {} neurons, layer2 {} neurons, {} batches, finished with {} epochs, took {} seconds'.format(n1, n2, b, e, time() - t0))
+                    train_results[(n1, n2, e, b)] = train_result
+                    test_results[(n1, n2, e, b)] = test_result
             
         
     print('train errors')
