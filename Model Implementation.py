@@ -382,10 +382,10 @@ if True:
     #test epochs first
 
     
-    neurons1 = [5, 10, 15]
-    neurons2 = [5, 10, 15]
-    epochs = [200, 300, 400]
-    batch_size = [400, 500, 600]
+    neurons1 = [5, 10, 15, 20, 25]
+    neurons2 = [5, 10, 15, 20, 25]
+    epochs = [400, 600, 800, 1000]
+    batch_size = [500]
     train_results = dict()
     test_results = dict()
 
@@ -406,10 +406,8 @@ if True:
         
     print('train errors')
     for key in train_results.keys():
-        print(key)
-        print(train_results[key])
+        print(key, train_results[key])
         
     print('test errors')
     for key in test_results.keys():
-        print(key)
-        print(test_results[key])
+        print(key, test_results[key])
