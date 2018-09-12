@@ -131,9 +131,12 @@ def illustrate_datasets():
     pass
 
 
-def extract_data(ticker):
+def extract_data(ticker, pca = None):
+
+    #all these don't have anything to do with whether a PCA exist or not
     data_yahoo = pd.read_csv('Data/' + ticker + '-yahoo.csv', index_col = 'Date')
     data_yahoo.index = pd.to_datetime(data_yahoo.index)
+    
     #here I'm trying to paint a shape of what's happening during the trading hours, these are independent features
     #range describes the min/max distance per open price
     data_yahoo['Range'] = (data_yahoo['High'] - data_yahoo['Low'])/ data_yahoo['Open']
@@ -152,6 +155,9 @@ def extract_data(ticker):
     #% change vs. previous 5 days (volume)
     data_yahoo['MA5 Volume pct_change'] = data_yahoo['Volume'] / data_yahoo['MA5 Volume'] - 1
 
+    print(data_yahoo.tail(20))
+    what = input('what')
+    
     #this is what we are trying to predict (targets)
     #1. 1 day future price
     data_yahoo['Adj Close 1day'] = data_yahoo['Adj Close'].shift(-1)
@@ -170,7 +176,8 @@ def extract_data(ticker):
     #data_yahoo['Adj Close 10day pct_change cls'] = data_yahoo['Adj Close 10day pct_change'].apply(lambda x: 1 if x >= 0 else 0)
 
     data_yahoo.dropna(axis = 0, how = 'any', inplace = True)
-    #print(data_yahoo.head(10))
+    print(data_yahoo.head(20))
+    what = input('what')
 
     #let's look at the target variable distribution
     if False: #scaling isn't all that great for these two target variables
@@ -380,6 +387,7 @@ def extract_data(ticker):
         
     #so what do we need to transform?
     #no scaler no transform
+    #these transofrmations don't need PCA either
     lam = 0.0001
     col_names = ['Adj Close 1day pct_change', 'Adj Close 5day pct_change', 'Adj Close 1day pct_change cls',
                  'Adj Close 5day pct_change cls', 'Open', 'Low', 'MA5 Adj Close pct_change']
@@ -412,16 +420,23 @@ def extract_data(ticker):
         plt.show()
 
     #let's also try PCA
-    pca = PCA(n_components = 7)
     train = data_yahoo[['Open', 'High', 'Low', 'Range', 'Adj Close', 'Volume', 'MA5 Adj Close',
                         'MA5 Volume', 'MA5 Adj Close pct_change', 'MA5 Volume pct_change']]
-    trainPCA = pd.DataFrame(pca.fit_transform(train))
 
-    temp = pd.DataFrame.copy(trainPCA)
-    temp.columns = ['Dimension ' + str(i) for i in range(1,8)]
+    if pca == None:
+        pca = PCA(n_components = 7)
+        trainPCA = pd.DataFrame(pca.fit_transform(train))
+
+    else:
+        trainPCA = pd.DataFrame(pca.transform(train))
+
+    PCA_data_yahoo = pd.DataFrame.copy(trainPCA)
+    PCA_data_yahoo.columns = ['Dimension ' + str(i) for i in range(1,8)]
     for target in ['Adj Close 1day', 'Adj Close 5day', 'Adj Close 1day pct_change', 'Adj Close 5day pct_change',
-                   'Adj Close 1day pct_change cls', 'Adj Close 5day pct_change cls']:
-        temp[target] = data_yahoo.reset_index()[target]
+                    'Adj Close 1day pct_change cls', 'Adj Close 5day pct_change cls']:
+        PCA_data_yahoo[target] = data_yahoo.reset_index()[target]
+        
+        
     
     if False: #show PCA results, cumulative power, and heatmap
         pca_results = vs.pca_results(train, pca)
@@ -449,10 +464,11 @@ def extract_data(ticker):
         plt.tight_layout()
         #plt.savefig('Charts/PCA heatmap.png')
         plt.show()
-        
-    return pca, temp, data_yahoo
+
+    #export pca, pca dataset, and original dataset
+    return pca, PCA_data_yahoo, data_yahoo
         
 
 if __name__ == '__main__':
     #illustrate_datasets()
-    pca, PCA_df, df = extract_data('AAPL')
+    pca, PCA_df, df = extract_data('BTC-USD', None)
