@@ -154,9 +154,6 @@ def extract_data(ticker, pca = None):
     data_yahoo['MA5 Adj Close pct_change'] = data_yahoo['Adj Close'] / data_yahoo['MA5 Adj Close'] - 1
     #% change vs. previous 5 days (volume)
     data_yahoo['MA5 Volume pct_change'] = data_yahoo['Volume'] / data_yahoo['MA5 Volume'] - 1
-
-    print(data_yahoo.tail(20))
-    what = input('what')
     
     #this is what we are trying to predict (targets)
     #1. 1 day future price
@@ -176,8 +173,6 @@ def extract_data(ticker, pca = None):
     #data_yahoo['Adj Close 10day pct_change cls'] = data_yahoo['Adj Close 10day pct_change'].apply(lambda x: 1 if x >= 0 else 0)
 
     data_yahoo.dropna(axis = 0, how = 'any', inplace = True)
-    print(data_yahoo.head(20))
-    what = input('what')
 
     #let's look at the target variable distribution
     if False: #scaling isn't all that great for these two target variables
